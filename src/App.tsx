@@ -20,6 +20,7 @@ import Feedback from "./pages/user/Feedback";
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageComplaints from "./pages/admin/ManageComplaints";
+import ManageNotices from "./pages/admin/ManageNotices";
 import PostNotice from "./pages/admin/PostNotice";
 import ViewFeedback from "./pages/admin/ViewFeedback";
 
@@ -57,6 +58,7 @@ function AppRoutes() {
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/manage-complaints" element={<ProtectedRoute allowedRole="admin"><ManageComplaints /></ProtectedRoute>} />
+      <Route path="/admin/manage-notices" element={<ProtectedRoute allowedRole="admin"><ManageNotices /></ProtectedRoute>} />
       <Route path="/admin/post-notice" element={<ProtectedRoute allowedRole="admin"><PostNotice /></ProtectedRoute>} />
       <Route path="/admin/view-feedback" element={<ProtectedRoute allowedRole="admin"><ViewFeedback /></ProtectedRoute>} />
       

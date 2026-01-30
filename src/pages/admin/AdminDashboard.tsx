@@ -2,10 +2,10 @@ import { useApp } from '@/context/AppContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DashboardCard } from '@/components/shared/DashboardCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardList, Bell, MessageSquare, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { ClipboardList, Bell, MessageSquare, AlertTriangle, Clock, TrendingUp, Settings } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { currentUser, complaints, feedback } = useApp();
+  const { currentUser, complaints, notices, feedback } = useApp();
   
   const pendingCount = complaints.filter(c => c.status === 'Pending').length;
   const inProgressCount = complaints.filter(c => c.status === 'In Progress').length;
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <h2 className="text-xl font-semibold mb-4 text-foreground">Management</h2>
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <DashboardCard
           title="Manage Complaints"
           description="Review and update complaint status"
@@ -84,8 +84,16 @@ export default function AdminDashboard() {
           gradient="admin"
         />
         <DashboardCard
-          title="Post Notices"
-          description="Inform users about updates"
+          title="Manage Notices"
+          description="Edit or delete posted notices"
+          icon={Settings}
+          href="/admin/manage-notices"
+          count={notices.length}
+          gradient="admin"
+        />
+        <DashboardCard
+          title="Post Notice"
+          description="Create new notification"
           icon={Bell}
           href="/admin/post-notice"
           gradient="admin"
