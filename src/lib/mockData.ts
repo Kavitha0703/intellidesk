@@ -10,6 +10,11 @@ export const initialComplaints: Complaint[] = [
     description: 'Unable to connect to the company VPN from Lab 2. The connection times out after 30 seconds.',
     date: '2026-01-28',
     status: 'In Progress',
+    statusHistory: [
+      { status: 'Pending', date: '2026-01-28', note: 'Complaint submitted' },
+      { status: 'In Progress', date: '2026-01-29', note: 'Assigned to network team' },
+    ],
+    adminComment: 'Network team is investigating the VPN server configuration.',
   },
   {
     id: 'CMP002',
@@ -20,6 +25,9 @@ export const initialComplaints: Complaint[] = [
     description: 'My workstation is not powering on. Tried multiple power outlets but no response.',
     date: '2026-01-27',
     status: 'Pending',
+    statusHistory: [
+      { status: 'Pending', date: '2026-01-27', note: 'Complaint submitted' },
+    ],
   },
   {
     id: 'CMP003',
@@ -30,6 +38,12 @@ export const initialComplaints: Complaint[] = [
     description: 'Microsoft Office keeps crashing when opening large Excel files.',
     date: '2026-01-25',
     status: 'Resolved',
+    statusHistory: [
+      { status: 'Pending', date: '2026-01-25', note: 'Complaint submitted' },
+      { status: 'In Progress', date: '2026-01-26', note: 'Reviewing Office installation' },
+      { status: 'Resolved', date: '2026-01-27', note: 'Office reinstalled successfully' },
+    ],
+    adminComment: 'Office was reinstalled with the latest updates. Issue should be resolved.',
   },
   {
     id: 'CMP004',
@@ -40,6 +54,9 @@ export const initialComplaints: Complaint[] = [
     description: 'Request for additional software installation - Adobe Creative Suite.',
     date: '2026-01-24',
     status: 'Pending',
+    statusHistory: [
+      { status: 'Pending', date: '2026-01-24', note: 'Complaint submitted' },
+    ],
   },
 ];
 

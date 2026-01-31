@@ -14,13 +14,16 @@ import NotFound from "./pages/NotFound";
 import UserDashboard from "./pages/user/UserDashboard";
 import RegisterComplaint from "./pages/user/RegisterComplaint";
 import ViewComplaints from "./pages/user/ViewComplaints";
+import ComplaintDetails from "./pages/user/ComplaintDetails";
 import Notices from "./pages/user/Notices";
 import Feedback from "./pages/user/Feedback";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageComplaints from "./pages/admin/ManageComplaints";
+import AdminComplaintDetails from "./pages/admin/ComplaintDetails";
 import ManageNotices from "./pages/admin/ManageNotices";
+import NoticeDetails from "./pages/admin/NoticeDetails";
 import PostNotice from "./pages/admin/PostNotice";
 import ViewFeedback from "./pages/admin/ViewFeedback";
 
@@ -52,13 +55,16 @@ function AppRoutes() {
       <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
       <Route path="/user/register-complaint" element={<ProtectedRoute allowedRole="user"><RegisterComplaint /></ProtectedRoute>} />
       <Route path="/user/view-complaints" element={<ProtectedRoute allowedRole="user"><ViewComplaints /></ProtectedRoute>} />
+      <Route path="/user/complaint/:id" element={<ProtectedRoute allowedRole="user"><ComplaintDetails /></ProtectedRoute>} />
       <Route path="/user/notices" element={<ProtectedRoute allowedRole="user"><Notices /></ProtectedRoute>} />
       <Route path="/user/feedback" element={<ProtectedRoute allowedRole="user"><Feedback /></ProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute allowedRole="admin"><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/manage-complaints" element={<ProtectedRoute allowedRole="admin"><ManageComplaints /></ProtectedRoute>} />
+      <Route path="/admin/complaint/:id" element={<ProtectedRoute allowedRole="admin"><AdminComplaintDetails /></ProtectedRoute>} />
       <Route path="/admin/manage-notices" element={<ProtectedRoute allowedRole="admin"><ManageNotices /></ProtectedRoute>} />
+      <Route path="/admin/notice/:id" element={<ProtectedRoute allowedRole="admin"><NoticeDetails /></ProtectedRoute>} />
       <Route path="/admin/post-notice" element={<ProtectedRoute allowedRole="admin"><PostNotice /></ProtectedRoute>} />
       <Route path="/admin/view-feedback" element={<ProtectedRoute allowedRole="admin"><ViewFeedback /></ProtectedRoute>} />
       
