@@ -1,45 +1,37 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Severity, ComplaintStatus } from '@/lib/types';
-import { Trash2, Filter, ClipboardList } from 'lucide-react';
+import { Severity } from '@/lib/types';
+import { Filter, ClipboardList, Search, Eye } from 'lucide-react';
 
 export default function ManageComplaints() {
-  const { complaints, setComplaints } = useApp();
-  const { toast } = useToast();
+  const { complaints } = useApp();
+  const navigate = useNavigate();
   const [severityFilter, setSeverityFilter] = useState<Severity | 'All'>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredComplaints = severityFilter === 'All'
-    ? complaints
-    : complaints.filter(c => c.severity === severityFilter);
-
-  const handleStatusChange = (id: string, newStatus: ComplaintStatus) => {
-    setComplaints(prev => 
-      prev.map(c => c.id === id ? { ...c, status: newStatus } : c)
-    );
-    toast({
-      title: 'Status Updated',
-      description: `Complaint ${id} status changed to ${newStatus}.`,
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    setComplaints(prev => prev.filter(c => c.id !== id));
-    toast({
-      title: 'Complaint Deleted',
-      description: `Complaint ${id} has been removed.`,
-    });
-  };
+  const filteredComplaints = complaints.filter(c => {
+    const matchesSeverity = severityFilter === 'All' || c.severity === severityFilter;
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = 
+      c.id.toLowerCase().includes(query) ||
+      c.userName.toLowerCase().includes(query) ||
+      c.email.toLowerCase().includes(query) ||
+      c.issueType.toLowerCase().includes(query) ||
+      c.severity.toLowerCase().includes(query) ||
+      c.status.toLowerCase().includes(query);
+    return matchesSeverity && matchesSearch;
+  });
 
   const severityLevels: (Severity | 'All')[] = ['All', 'Not Urgent', 'Medium', 'Urgent', 'Critical'];
-  const statusOptions: ComplaintStatus[] = ['Pending', 'In Progress', 'Resolved'];
 
   return (
     <DashboardLayout>
@@ -49,28 +41,39 @@ export default function ManageComplaints() {
         backHref="/admin"
       />
 
-      {/* Filter */}
+      {/* Filter & Search */}
       <Card className="border-0 shadow-card mb-6 animate-slide-up">
         <CardContent className="py-4">
-          <div className="flex items-center gap-4">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Filter by Severity:</span>
-            <Select
-              value={severityFilter}
-              onValueChange={(value) => setSeverityFilter(value as Severity | 'All')}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {severityLevels.map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {level}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <span className="text-sm text-muted-foreground ml-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by ID, user, email, issue type..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-[300px]"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Severity:</span>
+              <Select
+                value={severityFilter}
+                onValueChange={(value) => setSeverityFilter(value as Severity | 'All')}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {severityLevels.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <span className="text-sm text-muted-foreground md:ml-auto">
               Showing {filteredComplaints.length} of {complaints.length} complaints
             </span>
           </div>
@@ -85,9 +88,9 @@ export default function ManageComplaints() {
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">No Complaints Found</h3>
             <p className="text-muted-foreground text-center">
-              {severityFilter === 'All' 
-                ? 'There are no complaints in the system.'
-                : `No complaints with ${severityFilter} severity.`}
+              {searchQuery || severityFilter !== 'All'
+                ? 'No complaints match your search criteria.'
+                : 'There are no complaints in the system.'}
             </p>
           </CardContent>
         </Card>
@@ -102,7 +105,6 @@ export default function ManageComplaints() {
                     <TableHead>User</TableHead>
                     <TableHead>Issue Type</TableHead>
                     <TableHead>Severity</TableHead>
-                    <TableHead className="max-w-[200px]">Description</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Action</TableHead>
@@ -112,8 +114,9 @@ export default function ManageComplaints() {
                   {filteredComplaints.map((complaint, index) => (
                     <TableRow 
                       key={complaint.id}
-                      className="animate-slide-in-left"
+                      className="animate-slide-in-left cursor-pointer hover:bg-muted/50"
                       style={{ animationDelay: `${index * 50}ms` }}
+                      onClick={() => navigate(`/admin/complaint/${complaint.id}`)}
                     >
                       <TableCell className="font-mono text-sm">{complaint.id}</TableCell>
                       <TableCell>
@@ -133,37 +136,21 @@ export default function ManageComplaints() {
                       <TableCell>
                         <SeverityBadge severity={complaint.severity} />
                       </TableCell>
-                      <TableCell className="max-w-[200px]">
-                        <p className="truncate text-sm" title={complaint.description}>
-                          {complaint.description}
-                        </p>
-                      </TableCell>
                       <TableCell>{complaint.date}</TableCell>
                       <TableCell>
-                        <Select
-                          value={complaint.status}
-                          onValueChange={(value) => handleStatusChange(complaint.id, value as ComplaintStatus)}
-                        >
-                          <SelectTrigger className="w-[130px]">
-                            <StatusBadge status={complaint.status} />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover">
-                            {statusOptions.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {status}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <StatusBadge status={complaint.status} />
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(complaint.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/complaint/${complaint.id}`);
+                          }}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
                         </Button>
                       </TableCell>
                     </TableRow>

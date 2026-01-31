@@ -1,26 +1,31 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-import { Trash2, FileText } from 'lucide-react';
+import { FileText, Search, Eye } from 'lucide-react';
 
 export default function ViewComplaints() {
-  const { currentUser, complaints, setComplaints } = useApp();
-  const { toast } = useToast();
+  const { currentUser, complaints } = useApp();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const userComplaints = complaints.filter(c => c.userName === currentUser);
-
-  const handleDelete = (id: string) => {
-    setComplaints(prev => prev.filter(c => c.id !== id));
-    toast({
-      title: 'Complaint Deleted',
-      description: 'Your complaint has been removed.',
-    });
-  };
+  
+  const filteredComplaints = userComplaints.filter(c => {
+    const query = searchQuery.toLowerCase();
+    return (
+      c.id.toLowerCase().includes(query) ||
+      c.issueType.toLowerCase().includes(query) ||
+      c.severity.toLowerCase().includes(query) ||
+      c.status.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <DashboardLayout>
@@ -29,6 +34,26 @@ export default function ViewComplaints() {
         description="Track and manage your submitted complaints."
         backHref="/user"
       />
+
+      {/* Search Bar */}
+      {userComplaints.length > 0 && (
+        <Card className="border-0 shadow-card mb-6 animate-slide-up">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by ID, issue type, severity, or status..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-md"
+              />
+              <span className="text-sm text-muted-foreground ml-auto">
+                Showing {filteredComplaints.length} of {userComplaints.length} complaints
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {userComplaints.length === 0 ? (
         <Card className="border-0 shadow-card animate-slide-up">
@@ -39,6 +64,18 @@ export default function ViewComplaints() {
             <h3 className="text-lg font-medium text-foreground mb-2">No Complaints Yet</h3>
             <p className="text-muted-foreground text-center max-w-md">
               You haven't submitted any complaints. Click "Register Complaint" to submit your first one.
+            </p>
+          </CardContent>
+        </Card>
+      ) : filteredComplaints.length === 0 ? (
+        <Card className="border-0 shadow-card animate-slide-up">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="p-4 rounded-full bg-secondary mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">No Results Found</h3>
+            <p className="text-muted-foreground text-center">
+              No complaints match your search "{searchQuery}".
             </p>
           </CardContent>
         </Card>
@@ -57,11 +94,12 @@ export default function ViewComplaints() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {userComplaints.map((complaint, index) => (
+                {filteredComplaints.map((complaint, index) => (
                   <TableRow 
                     key={complaint.id}
-                    className="animate-slide-in-left"
+                    className="animate-slide-in-left cursor-pointer hover:bg-muted/50"
                     style={{ animationDelay: `${index * 50}ms` }}
+                    onClick={() => navigate(`/user/complaint/${complaint.id}`)}
                   >
                     <TableCell className="font-mono text-sm">{complaint.id}</TableCell>
                     <TableCell>
@@ -80,18 +118,17 @@ export default function ViewComplaints() {
                       <StatusBadge status={complaint.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      {complaint.status === 'Pending' ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(complaint.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/user/complaint/${complaint.id}`);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

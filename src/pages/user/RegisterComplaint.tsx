@@ -41,6 +41,7 @@ export default function RegisterComplaint() {
       return;
     }
 
+    const today = new Date().toISOString().split('T')[0];
     const newComplaint = {
       id: `CMP${String(Date.now()).slice(-6)}`,
       userName: currentUser,
@@ -49,8 +50,9 @@ export default function RegisterComplaint() {
       otherIssue: formData.otherIssue,
       severity: formData.severity as Severity,
       description: formData.description,
-      date: new Date().toISOString().split('T')[0],
+      date: today,
       status: 'Pending' as const,
+      statusHistory: [{ status: 'Pending' as const, date: today, note: 'Complaint submitted' }],
     };
 
     setComplaints(prev => [newComplaint, ...prev]);

@@ -6,6 +6,12 @@ export type Severity = 'Not Urgent' | 'Medium' | 'Urgent' | 'Critical';
 
 export type ComplaintStatus = 'Pending' | 'In Progress' | 'Resolved';
 
+export interface StatusHistoryEntry {
+  status: ComplaintStatus;
+  date: string;
+  note?: string;
+}
+
 export interface Complaint {
   id: string;
   userName: string;
@@ -16,6 +22,8 @@ export interface Complaint {
   description: string;
   date: string;
   status: ComplaintStatus;
+  statusHistory: StatusHistoryEntry[];
+  adminComment?: string;
 }
 
 export interface Notice {
@@ -23,6 +31,7 @@ export interface Notice {
   title: string;
   message: string;
   date: string;
+  lastUpdated?: string;
 }
 
 export interface Feedback {
