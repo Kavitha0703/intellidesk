@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { IssueType, Severity } from '@/lib/types';
+import { formatDate, getTodayISO, isValidEmail } from '@/lib/utils';
 import { Send } from 'lucide-react';
 
 export default function RegisterComplaint() {
@@ -25,31 +26,63 @@ export default function RegisterComplaint() {
     severity: '' as Severity | '',
     description: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const issueTypes: IssueType[] = ['System', 'Internet', 'Software', 'Hardware', 'Other'];
   const severityLevels: Severity[] = ['Not Urgent', 'Medium', 'Urgent', 'Critical'];
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.issueType) {
+      newErrors.issueType = 'Please select an issue type';
+    }
+
+    if (formData.issueType === 'Other' && !formData.otherIssue.trim()) {
+      newErrors.otherIssue = 'Please specify the issue type';
+    }
+
+    if (!formData.severity) {
+      newErrors.severity = 'Please select a severity level';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description cannot be empty';
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.issueType || !formData.severity || !formData.description) {
+    if (!validateForm()) {
       toast({
-        title: 'Missing Fields',
-        description: 'Please fill in all required fields.',
+        title: 'Validation Error',
+        description: 'Please fix the errors in the form.',
         variant: 'destructive',
       });
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayISO();
     const newComplaint = {
       id: `CMP${String(Date.now()).slice(-6)}`,
       userName: currentUser,
-      email: formData.email,
+      email: formData.email.trim(),
       issueType: formData.issueType as IssueType,
-      otherIssue: formData.otherIssue,
+      otherIssue: formData.otherIssue.trim(),
       severity: formData.severity as Severity,
-      description: formData.description,
+      description: formData.description.trim(),
       date: today,
       status: 'Pending' as const,
       statusHistory: [{ status: 'Pending' as const, date: today, note: 'Complaint submitted' }],
@@ -58,7 +91,7 @@ export default function RegisterComplaint() {
     setComplaints(prev => [newComplaint, ...prev]);
     
     toast({
-      title: 'Complaint Submitted!',
+      title: 'Complaint Submitted Successfully!',
       description: `Your complaint ID is ${newComplaint.id}. We'll get back to you soon.`,
     });
 
@@ -87,15 +120,19 @@ export default function RegisterComplaint() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="your.email@company.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (errors.email) setErrors({ ...errors, email: '' });
+                  }}
+                  className={errors.email ? 'border-destructive' : ''}
                 />
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
             </div>
 
@@ -104,9 +141,12 @@ export default function RegisterComplaint() {
                 <Label htmlFor="issueType">Issue Type *</Label>
                 <Select
                   value={formData.issueType}
-                  onValueChange={(value) => setFormData({ ...formData, issueType: value as IssueType })}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, issueType: value as IssueType });
+                    if (errors.issueType) setErrors({ ...errors, issueType: '' });
+                  }}
                 >
-                  <SelectTrigger id="issueType">
+                  <SelectTrigger id="issueType" className={errors.issueType ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select issue type" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
@@ -117,14 +157,18 @@ export default function RegisterComplaint() {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.issueType && <p className="text-sm text-destructive">{errors.issueType}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="severity">Severity *</Label>
                 <Select
                   value={formData.severity}
-                  onValueChange={(value) => setFormData({ ...formData, severity: value as Severity })}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, severity: value as Severity });
+                    if (errors.severity) setErrors({ ...errors, severity: '' });
+                  }}
                 >
-                  <SelectTrigger id="severity">
+                  <SelectTrigger id="severity" className={errors.severity ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select severity" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
@@ -133,38 +177,47 @@ export default function RegisterComplaint() {
                         {level}
                       </SelectItem>
                     ))}
-                  </SelectContent>
+                </SelectContent>
                 </Select>
+                {errors.severity && <p className="text-sm text-destructive">{errors.severity}</p>}
               </div>
             </div>
 
             {formData.issueType === 'Other' && (
               <div className="space-y-2 animate-slide-up">
-                <Label htmlFor="otherIssue">Specify Other Issue</Label>
+                <Label htmlFor="otherIssue">Specify Other Issue *</Label>
                 <Input
                   id="otherIssue"
                   placeholder="Describe the issue type"
                   value={formData.otherIssue}
-                  onChange={(e) => setFormData({ ...formData, otherIssue: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, otherIssue: e.target.value });
+                    if (errors.otherIssue) setErrors({ ...errors, otherIssue: '' });
+                  }}
+                  className={errors.otherIssue ? 'border-destructive' : ''}
                 />
+                {errors.otherIssue && <p className="text-sm text-destructive">{errors.otherIssue}</p>}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">Description * (minimum 10 characters)</Label>
               <Textarea
                 id="description"
                 placeholder="Please describe your issue in detail..."
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="min-h-[120px]"
-                required
+                onChange={(e) => {
+                  setFormData({ ...formData, description: e.target.value });
+                  if (errors.description) setErrors({ ...errors, description: '' });
+                }}
+                className={`min-h-[120px] ${errors.description ? 'border-destructive' : ''}`}
               />
+              {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
             </div>
 
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
-                Date: {new Date().toLocaleDateString()}
+                Date: {formatDate(new Date())}
               </p>
               <Button type="submit" size="lg">
                 <Send className="mr-2 h-4 w-4" />

@@ -26,7 +26,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Bell, Calendar, Search, Eye } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { Trash2, Bell, Calendar, Search, Eye, Inbox } from 'lucide-react';
 
 export default function ManageNotices() {
   const { notices, setNotices } = useApp();
@@ -46,8 +47,8 @@ export default function ManageNotices() {
   const handleConfirmDelete = (id: string) => {
     setNotices(prev => prev.filter(n => n.id !== id));
     toast({
-      title: 'Notice Deleted',
-      description: 'The notice has been removed successfully.',
+      title: 'Notice Deleted Successfully',
+      description: 'The notice has been permanently removed from the system.',
     });
   };
 
@@ -83,12 +84,15 @@ export default function ManageNotices() {
         <Card className="border-0 shadow-card animate-slide-up">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="p-4 rounded-full bg-secondary mb-4">
-              <Bell className="h-8 w-8 text-muted-foreground" />
+              <Inbox className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">No Notices Yet</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              You haven't posted any notices. Click "Post Notice" to create one.
+            <h3 className="text-lg font-medium text-foreground mb-2">No Notices Posted Yet</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              You haven't posted any system notifications. Create one to inform users about important updates.
             </p>
+            <Button onClick={() => navigate('/admin/post-notice')}>
+              Post Your First Notice
+            </Button>
           </CardContent>
         </Card>
       ) : filteredNotices.length === 0 ? (
@@ -134,7 +138,7 @@ export default function ManageNotices() {
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
-                        {notice.date}
+                        {formatDate(notice.date)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

@@ -3,7 +3,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, ThumbsUp, Minus, ThumbsDown, User, Calendar } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { MessageSquare, ThumbsUp, Minus, ThumbsDown, User, Calendar, Inbox } from 'lucide-react';
 
 export default function ViewFeedback() {
   const { feedback } = useApp();
@@ -42,11 +43,11 @@ export default function ViewFeedback() {
         <Card className="border-0 shadow-card animate-slide-up">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="p-4 rounded-full bg-secondary mb-4">
-              <MessageSquare className="h-8 w-8 text-muted-foreground" />
+              <Inbox className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">No Feedback Yet</h3>
-            <p className="text-muted-foreground text-center">
-              Users haven't submitted any feedback yet.
+            <h3 className="text-lg font-medium text-foreground mb-2">No Feedback Received Yet</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              Users haven't submitted any feedback yet. Feedback will appear here once users share their experiences.
             </p>
           </CardContent>
         </Card>
@@ -68,7 +69,7 @@ export default function ViewFeedback() {
                       <CardTitle className="text-base">{item.userName}</CardTitle>
                       <CardDescription className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {item.date}
+                        {formatDate(item.date)}
                       </CardDescription>
                     </div>
                   </div>

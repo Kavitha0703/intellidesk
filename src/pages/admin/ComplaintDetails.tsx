@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ComplaintStatus } from '@/lib/types';
+import { formatDate, getTodayISO } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -65,7 +66,7 @@ export default function AdminComplaintDetails() {
 
     const newHistoryEntry = {
       status: newStatus,
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayISO(),
       note: statusNote || `Status changed to ${newStatus}`,
     };
 
@@ -83,7 +84,7 @@ export default function AdminComplaintDetails() {
 
     setStatusNote('');
     toast({
-      title: 'Status Updated',
+      title: 'Status Updated Successfully',
       description: `Complaint ${complaint.id} status changed to ${newStatus}.`,
     });
   };
@@ -97,16 +98,16 @@ export default function AdminComplaintDetails() {
       )
     );
     toast({
-      title: 'Comment Saved',
-      description: 'Resolution note has been saved successfully.',
+      title: 'Comment Saved Successfully',
+      description: 'Resolution note has been saved and is now visible to the user.',
     });
   };
 
   const handleDelete = () => {
     setComplaints(prev => prev.filter(c => c.id !== complaint.id));
     toast({
-      title: 'Complaint Deleted',
-      description: `Complaint ${complaint.id} has been removed.`,
+      title: 'Complaint Deleted Successfully',
+      description: `Complaint ${complaint.id} has been permanently removed.`,
     });
     navigate('/admin/manage-complaints');
   };
@@ -167,7 +168,7 @@ export default function AdminComplaintDetails() {
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>Submitted: {complaint.date}</span>
+                <span>Submitted: {formatDate(complaint.date)}</span>
               </div>
             </CardContent>
           </Card>
@@ -219,7 +220,7 @@ export default function AdminComplaintDetails() {
                         <div className="p-3 rounded-lg bg-secondary/50">
                           <div className="flex items-center gap-2 mb-1">
                             <StatusBadge status={entry.status} />
-                            <span className="text-sm text-muted-foreground">{entry.date}</span>
+                            <span className="text-sm text-muted-foreground">{formatDate(entry.date)}</span>
                           </div>
                           {entry.note && <p className="text-sm">{entry.note}</p>}
                         </div>

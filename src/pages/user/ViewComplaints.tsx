@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Search, Eye } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { FileText, Search, Eye, AlertCircle } from 'lucide-react';
 
 export default function ViewComplaints() {
   const { currentUser, complaints } = useApp();
@@ -59,12 +60,15 @@ export default function ViewComplaints() {
         <Card className="border-0 shadow-card animate-slide-up">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="p-4 rounded-full bg-secondary mb-4">
-              <FileText className="h-8 w-8 text-muted-foreground" />
+              <AlertCircle className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">No Complaints Yet</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              You haven't submitted any complaints. Click "Register Complaint" to submit your first one.
+            <h3 className="text-lg font-medium text-foreground mb-2">No Complaints Submitted Yet</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              You haven't registered any IT complaints. If you're experiencing issues, click the button below to submit your first complaint.
             </p>
+            <Button onClick={() => navigate('/user/register-complaint')}>
+              Register Your First Complaint
+            </Button>
           </CardContent>
         </Card>
       ) : filteredComplaints.length === 0 ? (
@@ -113,7 +117,7 @@ export default function ViewComplaints() {
                     <TableCell>
                       <SeverityBadge severity={complaint.severity} />
                     </TableCell>
-                    <TableCell>{complaint.date}</TableCell>
+                    <TableCell>{formatDate(complaint.date)}</TableCell>
                     <TableCell>
                       <StatusBadge status={complaint.status} />
                     </TableCell>

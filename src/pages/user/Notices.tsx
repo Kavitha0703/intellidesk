@@ -2,7 +2,8 @@ import { useApp } from '@/context/AppContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, Calendar } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { Bell, Calendar, Inbox } from 'lucide-react';
 
 export default function Notices() {
   const { notices } = useApp();
@@ -19,11 +20,11 @@ export default function Notices() {
         <Card className="border-0 shadow-card animate-slide-up">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="p-4 rounded-full bg-secondary mb-4">
-              <Bell className="h-8 w-8 text-muted-foreground" />
+              <Inbox className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">No Notices</h3>
-            <p className="text-muted-foreground text-center">
-              There are no system notifications at this time.
+            <h3 className="text-lg font-medium text-foreground mb-2">No Notices Available</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              There are no system notifications at this time. Check back later for updates from the IT department.
             </p>
           </CardContent>
         </Card>
@@ -45,7 +46,7 @@ export default function Notices() {
                       <CardTitle className="text-lg">{notice.title}</CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <Calendar className="h-3 w-3" />
-                        {notice.date}
+                        {formatDate(notice.date)}
                       </CardDescription>
                     </div>
                   </div>
