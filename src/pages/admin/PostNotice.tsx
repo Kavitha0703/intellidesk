@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { formatDate, getTodayISO } from '@/lib/utils';
 import { Send, Bell } from 'lucide-react';
 
 export default function PostNotice() {
@@ -35,14 +36,14 @@ export default function PostNotice() {
       id: `NOT${String(Date.now()).slice(-6)}`,
       title: title.trim(),
       message: message.trim(),
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayISO(),
     };
 
     setNotices(prev => [newNotice, ...prev]);
     
     toast({
-      title: 'Notice Posted!',
-      description: 'Users will now see this notification.',
+      title: 'Notice Posted Successfully!',
+      description: 'All users can now see this notification.',
     });
 
     navigate('/admin');
@@ -96,7 +97,7 @@ export default function PostNotice() {
 
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
-                Date: {new Date().toLocaleDateString()}
+                Date: {formatDate(new Date())}
               </p>
               <Button type="submit" size="lg">
                 <Send className="mr-2 h-4 w-4" />

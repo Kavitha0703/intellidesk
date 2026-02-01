@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { formatDate, getTodayISO } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -68,23 +69,23 @@ export default function NoticeDetails() {
               ...n,
               title: editData.title.trim(),
               message: editData.message.trim(),
-              lastUpdated: new Date().toISOString().split('T')[0],
+              lastUpdated: getTodayISO(),
             }
           : n
       )
     );
     setIsEditing(false);
     toast({
-      title: 'Notice Updated',
-      description: 'The notice has been updated successfully.',
+      title: 'Notice Updated Successfully',
+      description: 'The changes have been saved and are now visible to users.',
     });
   };
 
   const handleDelete = () => {
     setNotices(prev => prev.filter(n => n.id !== notice.id));
     toast({
-      title: 'Notice Deleted',
-      description: 'The notice has been removed successfully.',
+      title: 'Notice Deleted Successfully',
+      description: 'The notice has been permanently removed from the system.',
     });
     navigate('/admin/manage-notices');
   };
@@ -179,13 +180,13 @@ export default function NoticeDetails() {
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Posted:</span>
-                <span className="font-medium">{notice.date}</span>
+                <span className="font-medium">{formatDate(notice.date)}</span>
               </div>
               {notice.lastUpdated && (
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Updated:</span>
-                  <span className="font-medium">{notice.lastUpdated}</span>
+                  <span className="font-medium">{formatDate(notice.lastUpdated)}</span>
                 </div>
               )}
               <div className="flex items-center gap-2 text-sm">

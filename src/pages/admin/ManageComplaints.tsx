@@ -10,26 +10,52 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Severity } from '@/lib/types';
-import { Filter, ClipboardList, Search, Eye } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { Filter, ClipboardList, Search, Eye, ArrowUpDown, Inbox } from 'lucide-react';
+
+type SortOption = 'date-desc' | 'date-asc' | 'severity-high' | 'severity-low';
+
+const severityOrder: Record<Severity, number> = {
+  'Critical': 4,
+  'Urgent': 3,
+  'Medium': 2,
+  'Not Urgent': 1,
+};
 
 export default function ManageComplaints() {
   const { complaints } = useApp();
   const navigate = useNavigate();
   const [severityFilter, setSeverityFilter] = useState<Severity | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('date-desc');
 
-  const filteredComplaints = complaints.filter(c => {
-    const matchesSeverity = severityFilter === 'All' || c.severity === severityFilter;
-    const query = searchQuery.toLowerCase();
-    const matchesSearch = 
-      c.id.toLowerCase().includes(query) ||
-      c.userName.toLowerCase().includes(query) ||
-      c.email.toLowerCase().includes(query) ||
-      c.issueType.toLowerCase().includes(query) ||
-      c.severity.toLowerCase().includes(query) ||
-      c.status.toLowerCase().includes(query);
-    return matchesSeverity && matchesSearch;
-  });
+  const filteredComplaints = complaints
+    .filter(c => {
+      const matchesSeverity = severityFilter === 'All' || c.severity === severityFilter;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        c.id.toLowerCase().includes(query) ||
+        c.userName.toLowerCase().includes(query) ||
+        c.email.toLowerCase().includes(query) ||
+        c.issueType.toLowerCase().includes(query) ||
+        c.severity.toLowerCase().includes(query) ||
+        c.status.toLowerCase().includes(query);
+      return matchesSeverity && matchesSearch;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'date-desc':
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        case 'date-asc':
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        case 'severity-high':
+          return severityOrder[b.severity] - severityOrder[a.severity];
+        case 'severity-low':
+          return severityOrder[a.severity] - severityOrder[b.severity];
+        default:
+          return 0;
+      }
+    });
 
   const severityLevels: (Severity | 'All')[] = ['All', 'Not Urgent', 'Medium', 'Urgent', 'Critical'];
 
@@ -70,6 +96,21 @@ export default function ManageComplaints() {
                       {level}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-4">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Sort:</span>
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="date-desc">Latest First</SelectItem>
+                  <SelectItem value="date-asc">Oldest First</SelectItem>
+                  <SelectItem value="severity-high">Severity: High to Low</SelectItem>
+                  <SelectItem value="severity-low">Severity: Low to High</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -136,7 +177,7 @@ export default function ManageComplaints() {
                       <TableCell>
                         <SeverityBadge severity={complaint.severity} />
                       </TableCell>
-                      <TableCell>{complaint.date}</TableCell>
+                      <TableCell>{formatDate(complaint.date)}</TableCell>
                       <TableCell>
                         <StatusBadge status={complaint.status} />
                       </TableCell>

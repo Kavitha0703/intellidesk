@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { IssueType, Severity } from '@/lib/types';
+import { formatDate } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,7 @@ export default function ComplaintDetails() {
   }
 
   const canEdit = complaint.status === 'Pending';
+  const isReadOnly = complaint.status === 'Resolved';
 
   const handleSave = () => {
     setComplaints(prev =>
@@ -263,7 +265,7 @@ export default function ComplaintDetails() {
                         <div className="p-3 rounded-lg bg-secondary/50">
                           <div className="flex items-center gap-2 mb-1">
                             <StatusBadge status={entry.status} />
-                            <span className="text-sm text-muted-foreground">{entry.date}</span>
+                            <span className="text-sm text-muted-foreground">{formatDate(entry.date)}</span>
                           </div>
                           {entry.note && <p className="text-sm">{entry.note}</p>}
                         </div>
@@ -288,8 +290,15 @@ export default function ComplaintDetails() {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>Submitted: {complaint.date}</span>
+                <span>Submitted: {formatDate(complaint.date)}</span>
               </div>
+              {isReadOnly && (
+                <div className="p-3 rounded-lg bg-muted/50 border border-muted">
+                  <p className="text-sm text-muted-foreground">
+                    🔒 This complaint has been resolved and is now read-only.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

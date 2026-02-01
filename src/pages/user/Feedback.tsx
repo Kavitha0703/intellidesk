@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { getTodayISO } from '@/lib/utils';
 import { Send, ThumbsUp, Minus, ThumbsDown } from 'lucide-react';
 
 export default function Feedback() {
@@ -18,14 +19,32 @@ export default function Feedback() {
 
   const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | ''>('');
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!rating) {
+      newErrors.rating = 'Please select a rating';
+    }
+
+    if (!message.trim()) {
+      newErrors.message = 'Feedback message cannot be empty';
+    } else if (message.trim().length < 10) {
+      newErrors.message = 'Please provide more detail (at least 10 characters)';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!rating || !message.trim()) {
+    if (!validateForm()) {
       toast({
-        title: 'Missing Fields',
-        description: 'Please provide both a rating and your feedback.',
+        title: 'Validation Error',
+        description: 'Please fix the errors before submitting.',
         variant: 'destructive',
       });
       return;
@@ -36,13 +55,13 @@ export default function Feedback() {
       userName: currentUser,
       rating: rating as 'Good' | 'Average' | 'Bad',
       message: message.trim(),
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayISO(),
     };
 
     setFeedback(prev => [newFeedback, ...prev]);
     
     toast({
-      title: 'Feedback Submitted!',
+      title: 'Feedback Submitted Successfully!',
       description: 'Thank you for helping us improve our service.',
     });
 
@@ -67,10 +86,15 @@ export default function Feedback() {
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <Label>How would you rate your experience? *</Label>
+              <Label className={errors.rating ? 'text-destructive' : ''}>
+                How would you rate your experience? *
+              </Label>
               <RadioGroup
                 value={rating}
-                onValueChange={(value) => setRating(value as 'Good' | 'Average' | 'Bad')}
+                onValueChange={(value) => {
+                  setRating(value as 'Good' | 'Average' | 'Bad');
+                  if (errors.rating) setErrors({ ...errors, rating: '' });
+                }}
                 className="flex gap-4"
               >
                 {ratingOptions.map((option) => (
@@ -82,7 +106,7 @@ export default function Feedback() {
                     />
                     <Label
                       htmlFor={option.value}
-                      className="flex flex-col items-center justify-center rounded-xl border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all"
+                      className={`flex flex-col items-center justify-center rounded-xl border-2 bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all ${errors.rating ? 'border-destructive/50' : 'border-muted'}`}
                     >
                       <option.icon className={`h-8 w-8 mb-2 ${rating === option.value ? option.color : 'text-muted-foreground'}`} />
                       <span className="font-medium">{option.label}</span>
@@ -90,18 +114,24 @@ export default function Feedback() {
                   </div>
                 ))}
               </RadioGroup>
+              {errors.rating && <p className="text-sm text-destructive">{errors.rating}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Your Feedback *</Label>
+              <Label htmlFor="message" className={errors.message ? 'text-destructive' : ''}>
+                Your Feedback * (minimum 10 characters)
+              </Label>
               <Textarea
                 id="message"
                 placeholder="Share your thoughts, suggestions, or concerns..."
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="min-h-[150px]"
-                required
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  if (errors.message) setErrors({ ...errors, message: '' });
+                }}
+                className={`min-h-[150px] ${errors.message ? 'border-destructive' : ''}`}
               />
+              {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
             </div>
 
             <div className="flex items-center justify-between pt-4">
