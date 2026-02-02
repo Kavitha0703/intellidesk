@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -9,9 +9,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Severity } from '@/lib/types';
+import { useToast } from '@/components/ui/use-toast';
+import { Severity, ComplaintStatus } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
-import { Filter, ClipboardList, Search, Eye, ArrowUpDown, Inbox } from 'lucide-react';
+import { exportComplaintsToCSV } from '@/lib/exportUtils';
+import { Filter, ClipboardList, Search, Eye, ArrowUpDown, Download, Loader2 } from 'lucide-react';
 
 type SortOption = 'date-desc' | 'date-asc' | 'severity-high' | 'severity-low';
 
@@ -22,12 +24,64 @@ const severityOrder: Record<Severity, number> = {
   'Not Urgent': 1,
 };
 
+interface ComplaintData {
+  id: string;
+  user_name: string;
+  email: string;
+  issue_type: string;
+  other_issue: string | null;
+  severity: Severity;
+  description: string;
+  status: ComplaintStatus;
+  admin_comment: string | null;
+  created_at: string;
+}
+
 export default function ManageComplaints() {
-  const { complaints } = useApp();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [complaints, setComplaints] = useState<ComplaintData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<Severity | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
+
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('complaints')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setComplaints(data?.map(c => ({
+          id: c.id,
+          user_name: c.user_name,
+          email: c.email,
+          issue_type: c.issue_type,
+          other_issue: c.other_issue,
+          severity: c.severity as Severity,
+          description: c.description,
+          status: c.status as ComplaintStatus,
+          admin_comment: c.admin_comment,
+          created_at: c.created_at,
+        })) || []);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load complaints',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaints();
+  }, [toast]);
 
   const filteredComplaints = complaints
     .filter(c => {
@@ -35,9 +89,9 @@ export default function ManageComplaints() {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
         c.id.toLowerCase().includes(query) ||
-        c.userName.toLowerCase().includes(query) ||
+        c.user_name.toLowerCase().includes(query) ||
         c.email.toLowerCase().includes(query) ||
-        c.issueType.toLowerCase().includes(query) ||
+        c.issue_type.toLowerCase().includes(query) ||
         c.severity.toLowerCase().includes(query) ||
         c.status.toLowerCase().includes(query);
       return matchesSeverity && matchesSearch;
@@ -45,9 +99,9 @@ export default function ManageComplaints() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'date-desc':
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'date-asc':
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case 'severity-high':
           return severityOrder[b.severity] - severityOrder[a.severity];
         case 'severity-low':
@@ -57,7 +111,34 @@ export default function ManageComplaints() {
       }
     });
 
+  const handleExportCSV = () => {
+    if (filteredComplaints.length === 0) {
+      toast({
+        title: 'No Data',
+        description: 'No complaints to export.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    exportComplaintsToCSV(filteredComplaints);
+    toast({
+      title: 'Export Successful',
+      description: `Exported ${filteredComplaints.length} complaints to CSV.`,
+    });
+  };
+
   const severityLevels: (Severity | 'All')[] = ['All', 'Not Urgent', 'Medium', 'Urgent', 'Critical'];
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -70,7 +151,7 @@ export default function ManageComplaints() {
       {/* Filter & Search */}
       <Card className="border-0 shadow-card mb-6 animate-slide-up">
         <CardContent className="py-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
             <div className="flex items-center gap-4">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
@@ -114,9 +195,15 @@ export default function ManageComplaints() {
                 </SelectContent>
               </Select>
             </div>
-            <span className="text-sm text-muted-foreground md:ml-auto">
-              Showing {filteredComplaints.length} of {complaints.length} complaints
-            </span>
+            <div className="flex items-center gap-4 lg:ml-auto">
+              <Button onClick={handleExportCSV} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Showing {filteredComplaints.length} of {complaints.length} complaints
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -159,25 +246,25 @@ export default function ManageComplaints() {
                       style={{ animationDelay: `${index * 50}ms` }}
                       onClick={() => navigate(`/admin/complaint/${complaint.id}`)}
                     >
-                      <TableCell className="font-mono text-sm">{complaint.id}</TableCell>
+                      <TableCell className="font-mono text-sm">{complaint.id.slice(0, 8)}...</TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{complaint.userName}</div>
+                          <div className="font-medium">{complaint.user_name}</div>
                           <div className="text-xs text-muted-foreground">{complaint.email}</div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {complaint.issueType}
-                        {complaint.issueType === 'Other' && complaint.otherIssue && (
+                        {complaint.issue_type}
+                        {complaint.issue_type === 'Other' && complaint.other_issue && (
                           <span className="text-muted-foreground text-sm block">
-                            ({complaint.otherIssue})
+                            ({complaint.other_issue})
                           </span>
                         )}
                       </TableCell>
                       <TableCell>
                         <SeverityBadge severity={complaint.severity} />
                       </TableCell>
-                      <TableCell>{formatDate(complaint.date)}</TableCell>
+                      <TableCell>{formatDate(complaint.created_at)}</TableCell>
                       <TableCell>
                         <StatusBadge status={complaint.status} />
                       </TableCell>

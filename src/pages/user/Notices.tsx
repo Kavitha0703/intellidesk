@@ -1,12 +1,52 @@
-import { useApp } from '@/context/AppContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
-import { Bell, Calendar, Inbox } from 'lucide-react';
+import { Bell, Calendar, Inbox, Loader2 } from 'lucide-react';
+
+interface NoticeData {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+}
 
 export default function Notices() {
-  const { notices } = useApp();
+  const [notices, setNotices] = useState<NoticeData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notices')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setNotices(data || []);
+      } catch (error) {
+        console.error('Error fetching notices:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotices();
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -46,7 +86,7 @@ export default function Notices() {
                       <CardTitle className="text-lg">{notice.title}</CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <Calendar className="h-3 w-3" />
-                        {formatDate(notice.date)}
+                        {formatDate(notice.created_at)}
                       </CardDescription>
                     </div>
                   </div>

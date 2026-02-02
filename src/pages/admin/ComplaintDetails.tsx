@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -10,8 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ComplaintStatus } from '@/lib/types';
-import { formatDate, getTodayISO } from '@/lib/utils';
+import { ComplaintStatus, IssueType, Severity, StatusHistoryEntry } from '@/lib/types';
+import { formatDate } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -23,20 +23,86 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Trash2, ArrowLeft, Clock, User, Mail, Calendar, MessageSquare, AlertTriangle, Save } from 'lucide-react';
+import { Trash2, ArrowLeft, Clock, User, Mail, Calendar, MessageSquare, AlertTriangle, Save, Loader2 } from 'lucide-react';
+
+interface ComplaintData {
+  id: string;
+  user_name: string;
+  email: string;
+  issue_type: IssueType;
+  other_issue: string | null;
+  severity: Severity;
+  description: string;
+  status: ComplaintStatus;
+  status_history: StatusHistoryEntry[];
+  admin_comment: string | null;
+  created_at: string;
+}
 
 export default function AdminComplaintDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { complaints, setComplaints } = useApp();
   const { toast } = useToast();
   
-  const complaint = complaints.find(c => c.id === id);
-  const [newStatus, setNewStatus] = useState<ComplaintStatus>(complaint?.status || 'Pending');
-  const [adminComment, setAdminComment] = useState(complaint?.adminComment || '');
+  const [complaint, setComplaint] = useState<ComplaintData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [newStatus, setNewStatus] = useState<ComplaintStatus>('Pending');
+  const [adminComment, setAdminComment] = useState('');
   const [statusNote, setStatusNote] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const statusOptions: ComplaintStatus[] = ['Pending', 'In Progress', 'Resolved'];
+
+  useEffect(() => {
+    const fetchComplaint = async () => {
+      if (!id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('complaints')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          const complaintData: ComplaintData = {
+            id: data.id,
+            user_name: data.user_name,
+            email: data.email,
+            issue_type: data.issue_type as IssueType,
+            other_issue: data.other_issue,
+            severity: data.severity as Severity,
+            description: data.description,
+            status: data.status as ComplaintStatus,
+            status_history: (Array.isArray(data.status_history) ? data.status_history : []) as unknown as StatusHistoryEntry[],
+            admin_comment: data.admin_comment,
+            created_at: data.created_at,
+          };
+          setComplaint(complaintData);
+          setNewStatus(complaintData.status);
+          setAdminComment(complaintData.admin_comment || '');
+        }
+      } catch (error) {
+        console.error('Error fetching complaint:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaint();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!complaint) {
     return (
@@ -54,7 +120,7 @@ export default function AdminComplaintDetails() {
     );
   }
 
-  const handleStatusUpdate = () => {
+  const handleStatusUpdate = async () => {
     if (newStatus === complaint.status && !statusNote) {
       toast({
         title: 'No Changes',
@@ -64,58 +130,103 @@ export default function AdminComplaintDetails() {
       return;
     }
 
-    const newHistoryEntry = {
-      status: newStatus,
-      date: getTodayISO(),
-      note: statusNote || `Status changed to ${newStatus}`,
-    };
+    setIsSaving(true);
+    try {
+      const newHistoryEntry: StatusHistoryEntry = {
+        status: newStatus,
+        date: new Date().toISOString(),
+        note: statusNote || `Status changed to ${newStatus}`,
+      };
 
-    setComplaints(prev =>
-      prev.map(c =>
-        c.id === complaint.id
-          ? {
-              ...c,
-              status: newStatus,
-              statusHistory: [...(c.statusHistory || []), newHistoryEntry],
-            }
-          : c
-      )
-    );
+      const updatedHistory = [...complaint.status_history, newHistoryEntry];
 
-    setStatusNote('');
-    toast({
-      title: 'Status Updated Successfully',
-      description: `Complaint ${complaint.id} status changed to ${newStatus}.`,
-    });
+      const { error } = await supabase
+        .from('complaints')
+        .update({
+          status: newStatus,
+          status_history: JSON.parse(JSON.stringify(updatedHistory)),
+        })
+        .eq('id', complaint.id);
+
+      if (error) throw error;
+
+      setComplaint({
+        ...complaint,
+        status: newStatus,
+        status_history: updatedHistory,
+      });
+      setStatusNote('');
+      toast({
+        title: 'Status Updated Successfully',
+        description: `Complaint status changed to ${newStatus}.`,
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update status. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveComment = () => {
-    setComplaints(prev =>
-      prev.map(c =>
-        c.id === complaint.id
-          ? { ...c, adminComment }
-          : c
-      )
-    );
-    toast({
-      title: 'Comment Saved Successfully',
-      description: 'Resolution note has been saved and is now visible to the user.',
-    });
+  const handleSaveComment = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .update({ admin_comment: adminComment })
+        .eq('id', complaint.id);
+
+      if (error) throw error;
+
+      setComplaint({ ...complaint, admin_comment: adminComment });
+      toast({
+        title: 'Comment Saved Successfully',
+        description: 'Resolution note has been saved and is now visible to the user.',
+      });
+    } catch (error) {
+      console.error('Error saving comment:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save comment. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = () => {
-    setComplaints(prev => prev.filter(c => c.id !== complaint.id));
-    toast({
-      title: 'Complaint Deleted Successfully',
-      description: `Complaint ${complaint.id} has been permanently removed.`,
-    });
-    navigate('/admin/manage-complaints');
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .delete()
+        .eq('id', complaint.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Complaint Deleted Successfully',
+        description: 'The complaint has been permanently removed.',
+      });
+      navigate('/admin/manage-complaints');
+    } catch (error) {
+      console.error('Error deleting complaint:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete complaint. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
     <DashboardLayout>
       <PageHeader
-        title={`Complaint ${complaint.id}`}
+        title={`Complaint ${complaint.id.slice(0, 8)}...`}
         description="View and manage complaint details."
         backHref="/admin/manage-complaints"
       />
@@ -133,7 +244,7 @@ export default function AdminComplaintDetails() {
                   <User className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">User Name</p>
-                    <p className="font-medium">{complaint.userName}</p>
+                    <p className="font-medium">{complaint.user_name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
@@ -149,9 +260,9 @@ export default function AdminComplaintDetails() {
                 <div className="p-3 rounded-lg bg-secondary/50">
                   <p className="text-sm text-muted-foreground mb-1">Issue Type</p>
                   <p className="font-medium">
-                    {complaint.issueType}
-                    {complaint.issueType === 'Other' && complaint.otherIssue && (
-                      <span className="text-muted-foreground"> ({complaint.otherIssue})</span>
+                    {complaint.issue_type}
+                    {complaint.issue_type === 'Other' && complaint.other_issue && (
+                      <span className="text-muted-foreground"> ({complaint.other_issue})</span>
                     )}
                   </p>
                 </div>
@@ -168,7 +279,7 @@ export default function AdminComplaintDetails() {
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>Submitted: {formatDate(complaint.date)}</span>
+                <span>Submitted: {formatDate(complaint.created_at)}</span>
               </div>
             </CardContent>
           </Card>
@@ -192,15 +303,19 @@ export default function AdminComplaintDetails() {
                   className="min-h-[100px]"
                 />
               </div>
-              <Button onClick={handleSaveComment}>
-                <Save className="mr-2 h-4 w-4" />
+              <Button onClick={handleSaveComment} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
                 Save Comment
               </Button>
             </CardContent>
           </Card>
 
           {/* Status History Timeline */}
-          {complaint.statusHistory && complaint.statusHistory.length > 0 && (
+          {complaint.status_history && complaint.status_history.length > 0 && (
             <Card className="border-0 shadow-card animate-slide-up" style={{ animationDelay: '100ms' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -212,7 +327,7 @@ export default function AdminComplaintDetails() {
                 <div className="relative">
                   <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-border" />
                   <div className="space-y-4">
-                    {complaint.statusHistory.map((entry, index) => (
+                    {complaint.status_history.map((entry, index) => (
                       <div key={index} className="relative pl-8">
                         <div className="absolute left-0 w-6 h-6 rounded-full bg-background border-2 border-primary flex items-center justify-center">
                           <div className="w-2 h-2 rounded-full bg-primary" />
@@ -270,7 +385,10 @@ export default function AdminComplaintDetails() {
                 />
               </div>
 
-              <Button onClick={handleStatusUpdate} className="w-full">
+              <Button onClick={handleStatusUpdate} className="w-full" disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
                 Update Status
               </Button>
             </CardContent>
@@ -296,7 +414,7 @@ export default function AdminComplaintDetails() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete complaint {complaint.id}. This action cannot be undone.
+                      This will permanently delete this complaint. This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

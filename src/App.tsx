@@ -3,11 +3,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppProvider, useApp } from "./context/AppContext";
+import { AppProvider } from "./context/AppContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Loader2 } from "lucide-react";
 
 // Pages
 import Index from "./pages/Index";
-import Login from "./pages/Login";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 // User Pages
@@ -26,19 +28,39 @@ import ManageNotices from "./pages/admin/ManageNotices";
 import NoticeDetails from "./pages/admin/NoticeDetails";
 import PostNotice from "./pages/admin/PostNotice";
 import ViewFeedback from "./pages/admin/ViewFeedback";
+import ManageUsers from "./pages/admin/ManageUsers";
 
 const queryClient = new QueryClient();
 
-// Protected Route wrapper
+// Protected Route wrapper using AuthContext
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole: 'user' | 'admin' }) {
-  const { role } = useApp();
+  const { user, loading, isApproved, isAdmin } = useAuth();
   
-  if (!role) {
-    return <Navigate to="/" replace />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
   
-  if (role !== allowedRole) {
-    return <Navigate to={role === 'admin' ? '/admin' : '/user'} replace />;
+  // Not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  // Not approved
+  if (!isApproved) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  // Wrong role
+  if (allowedRole === 'admin' && !isAdmin) {
+    return <Navigate to="/user" replace />;
+  }
+  
+  if (allowedRole === 'user' && isAdmin) {
+    return <Navigate to="/admin" replace />;
   }
   
   return <>{children}</>;
@@ -49,7 +71,8 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/login" element={<Navigate to="/auth" replace />} />
       
       {/* User Routes */}
       <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
@@ -67,6 +90,7 @@ function AppRoutes() {
       <Route path="/admin/notice/:id" element={<ProtectedRoute allowedRole="admin"><NoticeDetails /></ProtectedRoute>} />
       <Route path="/admin/post-notice" element={<ProtectedRoute allowedRole="admin"><PostNotice /></ProtectedRoute>} />
       <Route path="/admin/view-feedback" element={<ProtectedRoute allowedRole="admin"><ViewFeedback /></ProtectedRoute>} />
+      <Route path="/admin/manage-users" element={<ProtectedRoute allowedRole="admin"><ManageUsers /></ProtectedRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
@@ -77,13 +101,15 @@ function AppRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AppProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AppProvider>
+      <AuthProvider>
+        <AppProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AppProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

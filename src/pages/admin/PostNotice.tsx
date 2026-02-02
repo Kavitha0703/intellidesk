@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { formatDate, getTodayISO } from '@/lib/utils';
-import { Send, Bell } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import { Send, Bell, Loader2 } from 'lucide-react';
 
 export default function PostNotice() {
-  const { setNotices } = useApp();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim() || !message.trim()) {
@@ -32,21 +32,34 @@ export default function PostNotice() {
       return;
     }
 
-    const newNotice = {
-      id: `NOT${String(Date.now()).slice(-6)}`,
-      title: title.trim(),
-      message: message.trim(),
-      date: getTodayISO(),
-    };
+    setIsSubmitting(true);
 
-    setNotices(prev => [newNotice, ...prev]);
-    
-    toast({
-      title: 'Notice Posted Successfully!',
-      description: 'All users can now see this notification.',
-    });
+    try {
+      const { error } = await supabase
+        .from('notices')
+        .insert({
+          title: title.trim(),
+          message: message.trim(),
+        });
 
-    navigate('/admin');
+      if (error) throw error;
+
+      toast({
+        title: 'Notice Posted Successfully!',
+        description: 'All users can now see this notification.',
+      });
+
+      navigate('/admin');
+    } catch (error) {
+      console.error('Error posting notice:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to post notice. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,9 +112,18 @@ export default function PostNotice() {
               <p className="text-sm text-muted-foreground">
                 Date: {formatDate(new Date())}
               </p>
-              <Button type="submit" size="lg">
-                <Send className="mr-2 h-4 w-4" />
-                Post Notice
+              <Button type="submit" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Posting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Post Notice
+                  </>
+                )}
               </Button>
             </div>
           </form>

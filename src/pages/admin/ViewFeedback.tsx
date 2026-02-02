@@ -1,13 +1,50 @@
-import { useApp } from '@/context/AppContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
-import { MessageSquare, ThumbsUp, Minus, ThumbsDown, User, Calendar, Inbox } from 'lucide-react';
+import { ThumbsUp, Minus, ThumbsDown, User, Calendar, Inbox, Loader2 } from 'lucide-react';
+
+interface FeedbackData {
+  id: string;
+  user_name: string;
+  rating: 'Good' | 'Average' | 'Bad';
+  message: string;
+  created_at: string;
+}
 
 export default function ViewFeedback() {
-  const { feedback } = useApp();
+  const [feedback, setFeedback] = useState<FeedbackData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('feedback')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setFeedback(data?.map(f => ({
+          id: f.id,
+          user_name: f.user_name,
+          rating: f.rating as 'Good' | 'Average' | 'Bad',
+          message: f.message,
+          created_at: f.created_at,
+        })) || []);
+      } catch (error) {
+        console.error('Error fetching feedback:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeedback();
+  }, []);
 
   const getRatingIcon = (rating: 'Good' | 'Average' | 'Bad') => {
     switch (rating) {
@@ -30,6 +67,16 @@ export default function ViewFeedback() {
         return 'critical';
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -66,10 +113,10 @@ export default function ViewFeedback() {
                       <User className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <CardTitle className="text-base">{item.userName}</CardTitle>
+                      <CardTitle className="text-base">{item.user_name}</CardTitle>
                       <CardDescription className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {formatDate(item.date)}
+                        {formatDate(item.created_at)}
                       </CardDescription>
                     </div>
                   </div>

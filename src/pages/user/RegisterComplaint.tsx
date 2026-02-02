@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -11,22 +12,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { IssueType, Severity } from '@/lib/types';
-import { formatDate, getTodayISO, isValidEmail } from '@/lib/utils';
-import { Send } from 'lucide-react';
+import { formatDate, isValidEmail } from '@/lib/utils';
+import { Send, Loader2 } from 'lucide-react';
 
 export default function RegisterComplaint() {
-  const { currentUser, setComplaints } = useApp();
+  const { profile, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    email: '',
+    email: profile?.email || '',
     issueType: '' as IssueType | '',
     otherIssue: '',
     severity: '' as Severity | '',
     description: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const issueTypes: IssueType[] = ['System', 'Internet', 'Software', 'Hardware', 'Other'];
   const severityLevels: Severity[] = ['Not Urgent', 'Medium', 'Urgent', 'Critical'];
@@ -62,7 +64,7 @@ export default function RegisterComplaint() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -74,28 +76,58 @@ export default function RegisterComplaint() {
       return;
     }
 
-    const today = getTodayISO();
-    const newComplaint = {
-      id: `CMP${String(Date.now()).slice(-6)}`,
-      userName: currentUser,
-      email: formData.email.trim(),
-      issueType: formData.issueType as IssueType,
-      otherIssue: formData.otherIssue.trim(),
-      severity: formData.severity as Severity,
-      description: formData.description.trim(),
-      date: today,
-      status: 'Pending' as const,
-      statusHistory: [{ status: 'Pending' as const, date: today, note: 'Complaint submitted' }],
-    };
+    if (!user?.id || !profile) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to submit a complaint.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    setComplaints(prev => [newComplaint, ...prev]);
-    
-    toast({
-      title: 'Complaint Submitted Successfully!',
-      description: `Your complaint ID is ${newComplaint.id}. We'll get back to you soon.`,
-    });
+    setIsSubmitting(true);
 
-    navigate('/user/view-complaints');
+    try {
+      const statusHistory = [{
+        status: 'Pending',
+        date: new Date().toISOString(),
+        note: 'Complaint submitted'
+      }];
+
+      const { data, error } = await supabase
+        .from('complaints')
+        .insert({
+          user_id: user.id,
+          user_name: profile.name,
+          email: formData.email.trim(),
+          issue_type: formData.issueType as IssueType,
+          other_issue: formData.issueType === 'Other' ? formData.otherIssue.trim() : null,
+          severity: formData.severity as Severity,
+          description: formData.description.trim(),
+          status: 'Pending',
+          status_history: statusHistory,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: 'Complaint Submitted Successfully!',
+        description: `Your complaint has been registered. We'll get back to you soon.`,
+      });
+
+      navigate('/user/view-complaints');
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit complaint. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -114,7 +146,7 @@ export default function RegisterComplaint() {
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  value={currentUser}
+                  value={profile?.name || ''}
                   disabled
                   className="bg-secondary"
                 />
@@ -219,9 +251,18 @@ export default function RegisterComplaint() {
               <p className="text-sm text-muted-foreground">
                 Date: {formatDate(new Date())}
               </p>
-              <Button type="submit" size="lg">
-                <Send className="mr-2 h-4 w-4" />
-                Submit Complaint
+              <Button type="submit" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Submit Complaint
+                  </>
+                )}
               </Button>
             </div>
           </form>

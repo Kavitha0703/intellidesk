@@ -14,16 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      complaints: {
+        Row: {
+          admin_comment: string | null
+          created_at: string
+          description: string
+          email: string
+          id: string
+          issue_type: Database["public"]["Enums"]["issue_type"]
+          other_issue: string | null
+          severity: Database["public"]["Enums"]["complaint_severity"]
+          status: Database["public"]["Enums"]["complaint_status"]
+          status_history: Json
+          updated_at: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          admin_comment?: string | null
+          created_at?: string
+          description: string
+          email: string
+          id?: string
+          issue_type: Database["public"]["Enums"]["issue_type"]
+          other_issue?: string | null
+          severity: Database["public"]["Enums"]["complaint_severity"]
+          status?: Database["public"]["Enums"]["complaint_status"]
+          status_history?: Json
+          updated_at?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          admin_comment?: string | null
+          created_at?: string
+          description?: string
+          email?: string
+          id?: string
+          issue_type?: Database["public"]["Enums"]["issue_type"]
+          other_issue?: string | null
+          severity?: Database["public"]["Enums"]["complaint_severity"]
+          status?: Database["public"]["Enums"]["complaint_status"]
+          status_history?: Json
+          updated_at?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          rating: Database["public"]["Enums"]["feedback_rating"]
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          rating: Database["public"]["Enums"]["feedback_rating"]
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          rating?: Database["public"]["Enums"]["feedback_rating"]
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
+      notices: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["user_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          status?: Database["public"]["Enums"]["user_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["user_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_approved: { Args: { _user_id: string }; Returns: boolean }
+      promote_to_admin: { Args: { _email: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      complaint_severity: "Not Urgent" | "Medium" | "Urgent" | "Critical"
+      complaint_status: "Pending" | "In Progress" | "Resolved"
+      feedback_rating: "Good" | "Average" | "Bad"
+      issue_type: "System" | "Internet" | "Software" | "Hardware" | "Other"
+      user_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +309,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      complaint_severity: ["Not Urgent", "Medium", "Urgent", "Critical"],
+      complaint_status: ["Pending", "In Progress", "Resolved"],
+      feedback_rating: ["Good", "Average", "Bad"],
+      issue_type: ["System", "Internet", "Software", "Hardware", "Other"],
+      user_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const
