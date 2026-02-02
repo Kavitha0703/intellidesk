@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -8,25 +8,72 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Severity, ComplaintStatus } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
-import { FileText, Search, Eye, AlertCircle } from 'lucide-react';
+import { Search, Eye, AlertCircle, Loader2 } from 'lucide-react';
+
+interface ComplaintData {
+  id: string;
+  issue_type: string;
+  other_issue: string | null;
+  severity: Severity;
+  status: ComplaintStatus;
+  created_at: string;
+}
 
 export default function ViewComplaints() {
-  const { currentUser, complaints } = useApp();
   const navigate = useNavigate();
+  const [complaints, setComplaints] = useState<ComplaintData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const userComplaints = complaints.filter(c => c.userName === currentUser);
-  
-  const filteredComplaints = userComplaints.filter(c => {
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('complaints')
+          .select('id, issue_type, other_issue, severity, status, created_at')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setComplaints(data?.map(c => ({
+          id: c.id,
+          issue_type: c.issue_type,
+          other_issue: c.other_issue,
+          severity: c.severity as Severity,
+          status: c.status as ComplaintStatus,
+          created_at: c.created_at,
+        })) || []);
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaints();
+  }, []);
+
+  const filteredComplaints = complaints.filter(c => {
     const query = searchQuery.toLowerCase();
     return (
       c.id.toLowerCase().includes(query) ||
-      c.issueType.toLowerCase().includes(query) ||
+      c.issue_type.toLowerCase().includes(query) ||
       c.severity.toLowerCase().includes(query) ||
       c.status.toLowerCase().includes(query)
     );
   });
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -37,7 +84,7 @@ export default function ViewComplaints() {
       />
 
       {/* Search Bar */}
-      {userComplaints.length > 0 && (
+      {complaints.length > 0 && (
         <Card className="border-0 shadow-card mb-6 animate-slide-up">
           <CardContent className="py-4">
             <div className="flex items-center gap-4">
@@ -49,14 +96,14 @@ export default function ViewComplaints() {
                 className="max-w-md"
               />
               <span className="text-sm text-muted-foreground ml-auto">
-                Showing {filteredComplaints.length} of {userComplaints.length} complaints
+                Showing {filteredComplaints.length} of {complaints.length} complaints
               </span>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {userComplaints.length === 0 ? (
+      {complaints.length === 0 ? (
         <Card className="border-0 shadow-card animate-slide-up">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="p-4 rounded-full bg-secondary mb-4">
@@ -105,19 +152,19 @@ export default function ViewComplaints() {
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => navigate(`/user/complaint/${complaint.id}`)}
                   >
-                    <TableCell className="font-mono text-sm">{complaint.id}</TableCell>
+                    <TableCell className="font-mono text-sm">{complaint.id.slice(0, 8)}...</TableCell>
                     <TableCell>
-                      {complaint.issueType}
-                      {complaint.issueType === 'Other' && complaint.otherIssue && (
+                      {complaint.issue_type}
+                      {complaint.issue_type === 'Other' && complaint.other_issue && (
                         <span className="text-muted-foreground text-sm ml-1">
-                          ({complaint.otherIssue})
+                          ({complaint.other_issue})
                         </span>
                       )}
                     </TableCell>
                     <TableCell>
                       <SeverityBadge severity={complaint.severity} />
                     </TableCell>
-                    <TableCell>{formatDate(complaint.date)}</TableCell>
+                    <TableCell>{formatDate(complaint.created_at)}</TableCell>
                     <TableCell>
                       <StatusBadge status={complaint.status} />
                     </TableCell>

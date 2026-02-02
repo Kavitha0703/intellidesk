@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { getTodayISO } from '@/lib/utils';
-import { Send, ThumbsUp, Minus, ThumbsDown } from 'lucide-react';
+import { Send, ThumbsUp, Minus, ThumbsDown, Loader2 } from 'lucide-react';
 
 export default function Feedback() {
-  const { currentUser, setFeedback } = useApp();
+  const { profile, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | ''>('');
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -38,7 +39,7 @@ export default function Feedback() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -50,22 +51,45 @@ export default function Feedback() {
       return;
     }
 
-    const newFeedback = {
-      id: `FDB${String(Date.now()).slice(-6)}`,
-      userName: currentUser,
-      rating: rating as 'Good' | 'Average' | 'Bad',
-      message: message.trim(),
-      date: getTodayISO(),
-    };
+    if (!user?.id || !profile) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to submit feedback.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    setFeedback(prev => [newFeedback, ...prev]);
-    
-    toast({
-      title: 'Feedback Submitted Successfully!',
-      description: 'Thank you for helping us improve our service.',
-    });
+    setIsSubmitting(true);
 
-    navigate('/user');
+    try {
+      const { error } = await supabase
+        .from('feedback')
+        .insert({
+          user_id: user.id,
+          user_name: profile.name,
+          rating: rating as 'Good' | 'Average' | 'Bad',
+          message: message.trim(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Feedback Submitted Successfully!',
+        description: 'Thank you for helping us improve our service.',
+      });
+
+      navigate('/user');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit feedback. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const ratingOptions = [
@@ -136,11 +160,20 @@ export default function Feedback() {
 
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
-                Submitted by: {currentUser}
+                Submitted by: {profile?.name || 'User'}
               </p>
-              <Button type="submit" size="lg">
-                <Send className="mr-2 h-4 w-4" />
-                Submit Feedback
+              <Button type="submit" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Submit Feedback
+                  </>
+                )}
               </Button>
             </div>
           </form>
