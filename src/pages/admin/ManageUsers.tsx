@@ -1,55 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, UserStatus, AppRole } from '@/context/AuthContext';
+import { useAuth, AppRole } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/lib/utils';
-import { Search, Users, CheckCircle, XCircle, UserCheck, UserX, Loader2, Inbox } from 'lucide-react';
+import { Search, Users, Loader2, Inbox, Shield, User } from 'lucide-react';
 
 interface UserWithRole {
   id: string;
   name: string;
   email: string;
-  status: UserStatus;
   role: AppRole;
   created_at: string;
 }
 
-type StatusFilter = 'All' | UserStatus;
-
-function StatusBadge({ status }: { status: UserStatus }) {
-  const variants: Record<UserStatus, { variant: 'default' | 'secondary' | 'destructive'; label: string }> = {
-    pending: { variant: 'secondary', label: 'Pending' },
-    approved: { variant: 'default', label: 'Approved' },
-    rejected: { variant: 'destructive', label: 'Rejected' },
-  };
-  
-  const { variant, label } = variants[status];
-  
-  return <Badge variant={variant}>{label}</Badge>;
-}
+type RoleFilter = 'All' | AppRole;
 
 function RoleBadge({ role }: { role: AppRole }) {
   return (
-    <Badge variant={role === 'admin' ? 'default' : 'outline'}>
+    <Badge variant={role === 'admin' ? 'default' : 'outline'} className="flex items-center gap-1 w-fit">
+      {role === 'admin' ? <Shield className="h-3 w-3" /> : <User className="h-3 w-3" />}
       {role === 'admin' ? 'Admin' : 'User'}
     </Badge>
   );
@@ -63,13 +40,7 @@ export default function ManageUsers() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    action: 'approve' | 'reject' | null;
-    user: UserWithRole | null;
-  }>({ open: false, action: null, user: null });
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('All');
 
   const fetchUsers = async () => {
     try {
@@ -97,7 +68,6 @@ export default function ManageUsers() {
           id: profile.id,
           name: profile.name,
           email: profile.email,
-          status: profile.status as UserStatus,
           role: (userRole?.role || 'user') as AppRole,
           created_at: profile.created_at,
         };
@@ -124,76 +94,17 @@ export default function ManageUsers() {
     fetchUsers();
   }, [isAdmin, navigate]);
 
-  const handleApprove = async (user: UserWithRole) => {
-    setActionLoading(user.id);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'approved' })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'User Approved',
-        description: `${user.name} has been approved successfully.`,
-      });
-
-      fetchUsers();
-    } catch (error) {
-      console.error('Error approving user:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to approve user. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setActionLoading(null);
-      setConfirmDialog({ open: false, action: null, user: null });
-    }
-  };
-
-  const handleReject = async (user: UserWithRole) => {
-    setActionLoading(user.id);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'rejected' })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: 'User Rejected',
-        description: `${user.name} has been rejected.`,
-      });
-
-      fetchUsers();
-    } catch (error) {
-      console.error('Error rejecting user:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to reject user. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setActionLoading(null);
-      setConfirmDialog({ open: false, action: null, user: null });
-    }
-  };
-
   const filteredUsers = users.filter((user) => {
-    const matchesStatus = statusFilter === 'All' || user.status === statusFilter;
+    const matchesRole = roleFilter === 'All' || user.role === roleFilter;
     const query = searchQuery.toLowerCase();
     const matchesSearch =
       user.name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query) ||
-      user.status.toLowerCase().includes(query);
-    return matchesStatus && matchesSearch;
+      user.email.toLowerCase().includes(query);
+    return matchesRole && matchesSearch;
   });
 
-  const pendingCount = users.filter((u) => u.status === 'pending').length;
-  const approvedCount = users.filter((u) => u.status === 'approved').length;
+  const adminCount = users.filter((u) => u.role === 'admin').length;
+  const userCount = users.filter((u) => u.role === 'user').length;
 
   if (loading) {
     return (
@@ -208,8 +119,8 @@ export default function ManageUsers() {
   return (
     <DashboardLayout>
       <PageHeader
-        title="Manage Users"
-        description="Review and approve user registrations."
+        title="View Users"
+        description="View all registered users in the system."
         backHref="/admin"
       />
 
@@ -228,23 +139,23 @@ export default function ManageUsers() {
         </Card>
         <Card className="border-0 shadow-card">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-              <UserCheck className="h-6 w-6 text-yellow-600" />
+            <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+              <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-sm text-muted-foreground">Pending Approval</p>
+              <p className="text-2xl font-bold">{adminCount}</p>
+              <p className="text-sm text-muted-foreground">Admins</p>
             </div>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-card">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+              <User className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{approvedCount}</p>
-              <p className="text-sm text-muted-foreground">Approved Users</p>
+              <p className="text-2xl font-bold">{userCount}</p>
+              <p className="text-sm text-muted-foreground">Regular Users</p>
             </div>
           </CardContent>
         </Card>
@@ -264,19 +175,18 @@ export default function ManageUsers() {
               />
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium">Status:</span>
+              <span className="text-sm font-medium">Role:</span>
               <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+                value={roleFilter}
+                onValueChange={(value) => setRoleFilter(value as RoleFilter)}
               >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover">
                   <SelectItem value="All">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="user">User</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -295,7 +205,7 @@ export default function ManageUsers() {
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">No Users Found</h3>
             <p className="text-muted-foreground text-center">
-              {searchQuery || statusFilter !== 'All'
+              {searchQuery || roleFilter !== 'All'
                 ? 'No users match your search criteria.'
                 : 'There are no registered users in the system.'}
             </p>
@@ -311,9 +221,7 @@ export default function ManageUsers() {
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Registered</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -328,71 +236,7 @@ export default function ManageUsers() {
                       <TableCell>
                         <RoleBadge role={user.role} />
                       </TableCell>
-                      <TableCell>
-                        <StatusBadge status={user.status} />
-                      </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {user.status === 'pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  setConfirmDialog({ open: true, action: 'approve', user })
-                                }
-                                disabled={actionLoading === user.id}
-                              >
-                                {actionLoading === user.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </>
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() =>
-                                  setConfirmDialog({ open: true, action: 'reject', user })
-                                }
-                                disabled={actionLoading === user.id}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                          {user.status === 'rejected' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                setConfirmDialog({ open: true, action: 'approve', user })
-                              }
-                              disabled={actionLoading === user.id}
-                            >
-                              <UserCheck className="h-4 w-4 mr-1" />
-                              Re-approve
-                            </Button>
-                          )}
-                          {user.status === 'approved' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                setConfirmDialog({ open: true, action: 'reject', user })
-                              }
-                              disabled={actionLoading === user.id}
-                            >
-                              <UserX className="h-4 w-4 mr-1" />
-                              Revoke
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -401,48 +245,6 @@ export default function ManageUsers() {
           </CardContent>
         </Card>
       )}
-
-      {/* Confirmation Dialog */}
-      <AlertDialog
-        open={confirmDialog.open}
-        onOpenChange={(open) =>
-          setConfirmDialog({ open, action: null, user: null })
-        }
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmDialog.action === 'approve' ? 'Approve User' : 'Reject User'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmDialog.action === 'approve'
-                ? `Are you sure you want to approve ${confirmDialog.user?.name}? They will be able to access the complaint system.`
-                : `Are you sure you want to reject ${confirmDialog.user?.name}? They will not be able to access the complaint system.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (confirmDialog.user) {
-                  if (confirmDialog.action === 'approve') {
-                    handleApprove(confirmDialog.user);
-                  } else {
-                    handleReject(confirmDialog.user);
-                  }
-                }
-              }}
-              className={
-                confirmDialog.action === 'reject'
-                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                  : ''
-              }
-            >
-              {confirmDialog.action === 'approve' ? 'Approve' : 'Reject'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DashboardLayout>
   );
 }

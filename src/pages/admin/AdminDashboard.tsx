@@ -13,7 +13,7 @@ interface DashboardStats {
   criticalCount: number;
   noticesCount: number;
   feedbackCount: number;
-  pendingUsersCount: number;
+  totalUsersCount: number;
 }
 
 export default function AdminDashboard() {
@@ -25,7 +25,7 @@ export default function AdminDashboard() {
     criticalCount: 0,
     noticesCount: 0,
     feedbackCount: 0,
-    pendingUsersCount: 0,
+    totalUsersCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -51,11 +51,10 @@ export default function AdminDashboard() {
           .from('feedback')
           .select('*', { count: 'exact', head: true });
 
-        // Fetch pending users count
-        const { count: pendingUsersCount } = await supabase
+        // Fetch total users count
+        const { count: totalUsersCount } = await supabase
           .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+          .select('*', { count: 'exact', head: true });
 
         setStats({
           totalComplaints: complaints?.length || 0,
@@ -64,7 +63,7 @@ export default function AdminDashboard() {
           criticalCount,
           noticesCount: noticesCount || 0,
           feedbackCount: feedbackCount || 0,
-          pendingUsersCount: pendingUsersCount || 0,
+          totalUsersCount: totalUsersCount || 0,
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -148,11 +147,11 @@ export default function AdminDashboard() {
           gradient="admin"
         />
         <DashboardCard
-          title="Manage Users"
-          description="Approve user registrations"
+          title="View Users"
+          description="View registered users"
           icon={Users}
           href="/admin/manage-users"
-          count={stats.pendingUsersCount}
+          count={stats.totalUsersCount}
           gradient="admin"
         />
         <DashboardCard

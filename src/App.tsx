@@ -34,7 +34,7 @@ const queryClient = new QueryClient();
 
 // Protected Route wrapper using AuthContext
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; allowedRole: 'user' | 'admin' }) {
-  const { user, loading, isApproved, isAdmin } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   
   if (loading) {
     return (
@@ -46,11 +46,6 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
   
   // Not logged in
   if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  // Not approved
-  if (!isApproved) {
     return <Navigate to="/auth" replace />;
   }
   

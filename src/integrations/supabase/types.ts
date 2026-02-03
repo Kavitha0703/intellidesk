@@ -119,7 +119,6 @@ export type Database = {
           email: string
           id: string
           name: string
-          status: Database["public"]["Enums"]["user_status"]
           updated_at: string
         }
         Insert: {
@@ -127,7 +126,6 @@ export type Database = {
           email: string
           id: string
           name: string
-          status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
         }
         Update: {
@@ -135,7 +133,6 @@ export type Database = {
           email?: string
           id?: string
           name?: string
-          status?: Database["public"]["Enums"]["user_status"]
           updated_at?: string
         }
         Relationships: []
@@ -173,7 +170,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_approved: { Args: { _user_id: string }; Returns: boolean }
       promote_to_admin: { Args: { _email: string }; Returns: undefined }
     }
     Enums: {
@@ -182,7 +178,6 @@ export type Database = {
       complaint_status: "Pending" | "In Progress" | "Resolved"
       feedback_rating: "Good" | "Average" | "Bad"
       issue_type: "System" | "Internet" | "Software" | "Hardware" | "Other"
-      user_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -315,7 +310,6 @@ export const Constants = {
       complaint_status: ["Pending", "In Progress", "Resolved"],
       feedback_rating: ["Good", "Average", "Bad"],
       issue_type: ["System", "Internet", "Software", "Hardware", "Other"],
-      user_status: ["pending", "approved", "rejected"],
     },
   },
 } as const

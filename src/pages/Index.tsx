@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isApproved, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
 
   const features = [
     { icon: CheckCircle, title: 'Easy Submission', description: 'Submit IT complaints in seconds' },
@@ -15,9 +15,9 @@ const Index = () => {
     { icon: MessageSquare, title: 'Feedback System', description: 'Help us improve our service' },
   ];
 
-  // If user is logged in and approved, redirect to their dashboard
+  // If user is logged in, redirect to their dashboard
   const handleDashboardRedirect = () => {
-    if (user && isApproved) {
+    if (user && profile) {
       navigate(isAdmin ? '/admin' : '/user');
     } else {
       navigate('/auth');
@@ -48,7 +48,7 @@ const Index = () => {
             
             {/* Login/Dashboard Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              {user && isApproved ? (
+              {user && profile ? (
                 <Button 
                   variant="heroUser" 
                   size="xl" 
@@ -178,7 +178,7 @@ const Index = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-severity-not-urgent" />
-                    Approve user registrations
+                    View all registered users
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-severity-not-urgent" />

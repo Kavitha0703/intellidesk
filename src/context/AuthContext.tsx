@@ -3,13 +3,11 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 export type AppRole = 'admin' | 'user';
-export type UserStatus = 'pending' | 'approved' | 'rejected';
 
 export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  status: UserStatus;
   role: AppRole;
 }
 
@@ -18,11 +16,11 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, role: AppRole) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
   isAdmin: boolean;
-  isApproved: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: profileData.id,
           name: profileData.name,
           email: profileData.email,
-          status: profileData.status as UserStatus,
           role: roleData.role as AppRole,
         };
       }
@@ -112,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, role: AppRole) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -121,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: {
           emailRedirectTo: redirectUrl,
-          data: { name }
+          data: { name, role }
         }
       });
       
@@ -151,8 +148,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+      
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   const isAdmin = profile?.role === 'admin';
-  const isApproved = profile?.status === 'approved';
 
   return (
     <AuthContext.Provider
@@ -164,8 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signIn,
         signOut,
+        resetPassword,
         isAdmin,
-        isApproved,
       }}
     >
       {children}
