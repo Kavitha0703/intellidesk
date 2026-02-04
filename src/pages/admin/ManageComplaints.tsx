@@ -143,7 +143,7 @@ export default function ManageComplaints() {
   return (
     <DashboardLayout>
       <PageHeader
-        title="Manage Complaints"
+        title={`Manage Complaints(${complaints.length})`}
         description="Review, update status, and manage all IT complaints."
         backHref="/admin"
       />
@@ -195,10 +195,7 @@ export default function ManageComplaints() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-4 lg:ml-auto">
-              <span className="text-sm text-muted-foreground">
-                Showing {filteredComplaints.length} of {complaints.length} complaints
-              </span>
+            <div className="lg:ml-auto">
               <Button 
                 onClick={handleExportPDF} 
                 variant="ghost" 
