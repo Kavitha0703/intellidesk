@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Loader2, AlertCircle, CheckCircle, Monitor, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 
@@ -82,7 +82,7 @@ export default function Auth() {
 
     setIsSubmitting(true);
 
-    const { error } = await signIn(email, password);
+    const { error, data } = await signIn(email, password);
     
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
@@ -91,6 +91,33 @@ export default function Auth() {
         setError('Please confirm your email before logging in.');
       } else {
         setError(error.message);
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Check if user's role matches the intended login type
+    if (data?.user) {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+      
+      const userRole = roleData?.role || 'user';
+      const expectedRole = urlRole || 'user';
+      
+      if (userRole !== expectedRole) {
+        // Sign out and show error
+        await supabase.auth.signOut();
+        setError(
+          expectedRole === 'admin' 
+            ? 'This account is not registered as an Admin. Please use the User login instead.'
+            : 'This account is registered as an Admin. Please use the Admin login instead.'
+        );
+        setIsSubmitting(false);
+        return;
       }
     }
     
