@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Monitor, User, Shield, CheckCircle, Clock, Bell, MessageSquare, UserPlus } from 'lucide-react';
+import { Monitor, User, Shield, CheckCircle, Clock, Bell, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 
@@ -46,7 +46,7 @@ const Index = () => {
               and receive updates—all in one centralized platform.
             </p>
             
-            {/* Login/Dashboard Buttons */}
+            {/* User & Admin Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               {user && profile ? (
                 <Button 
@@ -55,7 +55,7 @@ const Index = () => {
                   onClick={handleDashboardRedirect}
                   className="w-full sm:w-auto"
                 >
-                  <User className="mr-2 h-5 w-5" />
+                  {isAdmin ? <Shield className="mr-2 h-5 w-5" /> : <User className="mr-2 h-5 w-5" />}
                   Go to Dashboard
                 </Button>
               ) : (
@@ -63,20 +63,20 @@ const Index = () => {
                   <Button 
                     variant="heroUser" 
                     size="xl" 
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate('/auth?role=user')}
                     className="w-full sm:w-auto"
                   >
                     <User className="mr-2 h-5 w-5" />
-                    Login
+                    User
                   </Button>
                   <Button 
                     variant="heroAdmin" 
                     size="xl" 
-                    onClick={() => navigate('/auth?tab=register')}
+                    onClick={() => navigate('/auth?role=admin')}
                     className="w-full sm:w-auto"
                   >
-                    <UserPlus className="mr-2 h-5 w-5" />
-                    Register
+                    <Shield className="mr-2 h-5 w-5" />
+                    Admin
                   </Button>
                 </>
               )}
