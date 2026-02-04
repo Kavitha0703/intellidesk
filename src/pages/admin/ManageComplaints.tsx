@@ -196,13 +196,17 @@ export default function ManageComplaints() {
               </Select>
             </div>
             <div className="flex items-center gap-4 lg:ml-auto">
-              <Button onClick={handleExportPDF} variant="outline">
-                <FileText className="h-4 w-4 mr-2" />
-                Export PDF
-              </Button>
               <span className="text-sm text-muted-foreground">
                 Showing {filteredComplaints.length} of {complaints.length} complaints
               </span>
+              <Button 
+                onClick={handleExportPDF} 
+                variant="ghost" 
+                size="icon"
+                title="Download PDF"
+              >
+                <FileText className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </CardContent>
