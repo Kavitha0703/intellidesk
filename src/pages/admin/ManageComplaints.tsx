@@ -159,9 +159,9 @@ export default function ManageComplaints() {
                   <SelectItem value="severity-low">Severity: Low to High</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="lg:ml-auto">
-              
+              <Button variant="outline" size="icon" onClick={handleExportPDF} title="Export to PDF">
+                <FileText className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardContent>
