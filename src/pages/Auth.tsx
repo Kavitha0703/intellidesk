@@ -20,16 +20,20 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
-  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>(
-    searchParams.get('tab') === 'register' ? 'register' : 'login'
-  );
+  // Get role from URL parameter
+  const urlRole = searchParams.get('role') as AppRole | null;
+  
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<AppRole>('user');
+  const [role, setRole] = useState<AppRole>(urlRole === 'admin' ? 'admin' : 'user');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Derive role label for UI
+  const roleLabel = urlRole === 'admin' ? 'Admin' : 'User';
 
   // Redirect if already logged in
   useEffect(() => {
@@ -166,8 +170,8 @@ export default function Auth() {
           </div>
           <CardTitle className="text-2xl">IT Complaint System</CardTitle>
           <CardDescription>
-            {activeTab === 'login' && 'Sign in to your account'}
-            {activeTab === 'register' && 'Create a new account'}
+            {activeTab === 'login' && `Sign in as ${roleLabel}`}
+            {activeTab === 'register' && `Create a new ${roleLabel} account`}
             {activeTab === 'forgot' && 'Reset your password'}
           </CardDescription>
         </CardHeader>
@@ -350,15 +354,13 @@ export default function Auth() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="register-role">Role</Label>
-                    <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-                      <SelectTrigger id="register-role">
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover">
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="register-role"
+                      type="text"
+                      value={roleLabel}
+                      disabled
+                      className="bg-muted"
+                    />
                   </div>
                   
                   <Button type="submit" className="w-full" disabled={isSubmitting}>

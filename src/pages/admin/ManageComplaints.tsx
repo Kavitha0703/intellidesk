@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { Severity, ComplaintStatus } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
-import { exportComplaintsToCSV } from '@/lib/exportUtils';
-import { Filter, ClipboardList, Search, Eye, ArrowUpDown, Download, Loader2 } from 'lucide-react';
+import { exportComplaintsToPDF } from '@/lib/exportUtils';
+import { Filter, ClipboardList, Search, Eye, ArrowUpDown, FileText, Loader2 } from 'lucide-react';
 
 type SortOption = 'date-desc' | 'date-asc' | 'severity-high' | 'severity-low';
 
@@ -111,7 +111,7 @@ export default function ManageComplaints() {
       }
     });
 
-  const handleExportCSV = () => {
+  const handleExportPDF = () => {
     if (filteredComplaints.length === 0) {
       toast({
         title: 'No Data',
@@ -121,10 +121,10 @@ export default function ManageComplaints() {
       return;
     }
 
-    exportComplaintsToCSV(filteredComplaints);
+    exportComplaintsToPDF(filteredComplaints);
     toast({
       title: 'Export Successful',
-      description: `Exported ${filteredComplaints.length} complaints to CSV.`,
+      description: `Exported ${filteredComplaints.length} complaints to PDF.`,
     });
   };
 
@@ -196,9 +196,9 @@ export default function ManageComplaints() {
               </Select>
             </div>
             <div className="flex items-center gap-4 lg:ml-auto">
-              <Button onClick={handleExportCSV} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
+              <Button onClick={handleExportPDF} variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
               </Button>
               <span className="text-sm text-muted-foreground">
                 Showing {filteredComplaints.length} of {complaints.length} complaints
