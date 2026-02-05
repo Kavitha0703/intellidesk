@@ -6,12 +6,14 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/lib/utils';
-import { Search, Users, Loader2, Inbox, Shield, User } from 'lucide-react';
+import { Search, Users, Loader2, Inbox, Shield, User, Plus } from 'lucide-react';
+import { AddUserModal } from '@/components/admin/AddUserModal';
 
 interface UserWithRole {
   id: string;
@@ -41,6 +43,8 @@ export default function ManageUsers() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('All');
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [defaultRoleForModal, setDefaultRoleForModal] = useState<AppRole>('user');
 
   const fetchUsers = async () => {
     try {
@@ -106,6 +110,11 @@ export default function ManageUsers() {
   const adminCount = users.filter((u) => u.role === 'admin').length;
   const userCount = users.filter((u) => u.role === 'user').length;
 
+  const handleAddUser = (role: AppRole) => {
+    setDefaultRoleForModal(role);
+    setAddModalOpen(true);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -142,10 +151,19 @@ export default function ManageUsers() {
             <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-2xl font-bold">{adminCount}</p>
               <p className="text-sm text-muted-foreground">Admins</p>
             </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => handleAddUser('admin')}
+              title="Add Admin"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-card">
@@ -153,10 +171,19 @@ export default function ManageUsers() {
             <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
               <User className="h-6 w-6 text-green-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <p className="text-2xl font-bold">{userCount}</p>
               <p className="text-sm text-muted-foreground">Regular Users</p>
             </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => handleAddUser('user')}
+              title="Add User"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -245,6 +272,13 @@ export default function ManageUsers() {
           </CardContent>
         </Card>
       )}
+
+      <AddUserModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        defaultRole={defaultRoleForModal}
+        onUserCreated={fetchUsers}
+      />
     </DashboardLayout>
   );
 }

@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IssueType, Severity } from '@/lib/types';
 import { formatDate, isValidEmail } from '@/lib/utils';
 import { Send, Loader2 } from 'lucide-react';
+import { ImageUpload } from '@/components/complaints/ImageUpload';
 
 export default function RegisterComplaint() {
   const { profile, user } = useAuth();
@@ -27,6 +28,7 @@ export default function RegisterComplaint() {
     severity: '' as Severity | '',
     description: '',
   });
+  const [images, setImages] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -88,13 +90,37 @@ export default function RegisterComplaint() {
     setIsSubmitting(true);
 
     try {
+      // Upload images first
+      const imageUrls: string[] = [];
+      for (const image of images) {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('complaint-images')
+          .upload(fileName, image);
+        
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          continue;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('complaint-images')
+          .getPublicUrl(fileName);
+        
+        if (urlData?.publicUrl) {
+          imageUrls.push(urlData.publicUrl);
+        }
+      }
+
       const statusHistory = [{
         status: 'Pending',
         date: new Date().toISOString(),
         note: 'Complaint submitted'
       }];
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('complaints')
         .insert({
           user_id: user.id,
@@ -106,6 +132,7 @@ export default function RegisterComplaint() {
           description: formData.description.trim(),
           status: 'Pending',
           status_history: statusHistory,
+          images: imageUrls,
         })
         .select()
         .single();
@@ -245,6 +272,16 @@ export default function RegisterComplaint() {
                 className={`min-h-[120px] ${errors.description ? 'border-destructive' : ''}`}
               />
               {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Upload Evidence (Optional)</Label>
+              <ImageUpload 
+                images={images} 
+                onImagesChange={setImages}
+                maxImages={5}
+                disabled={isSubmitting}
+              />
             </div>
 
             <div className="flex items-center justify-between pt-4">
