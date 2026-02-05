@@ -9,18 +9,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { Severity, ComplaintStatus } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import { exportComplaintsToPDF } from '@/lib/exportUtils';
-import { Filter, ClipboardList, Search, Eye, ArrowUpDown, FileText, Loader2 } from 'lucide-react';
+import { Filter, ClipboardList, Search, Eye, ArrowUpDown, FileText, Loader2, Trash2 } from 'lucide-react';
+
 type SortOption = 'date-desc' | 'date-asc' | 'severity-high' | 'severity-low';
+
 const severityOrder: Record<Severity, number> = {
   'Critical': 4,
   'Urgent': 3,
   'Medium': 2,
   'Not Urgent': 1
 };
+
 interface ComplaintData {
   id: string;
   user_name: string;
@@ -33,23 +48,22 @@ interface ComplaintData {
   admin_comment: string | null;
   created_at: string;
 }
+
 export default function ManageComplaints() {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [complaints, setComplaints] = useState<ComplaintData[]>([]);
   const [loading, setLoading] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<Severity | 'All'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-desc');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('complaints').select('*').order('created_at', {
+        const { data, error } = await supabase.from('complaints').select('*').order('created_at', {
           ascending: false
         });
         if (error) throw error;
@@ -78,6 +92,84 @@ export default function ManageComplaints() {
     };
     fetchComplaints();
   }, [toast]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredComplaints.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredComplaints.map(c => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .delete()
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+
+      setComplaints(complaints.filter(c => !selectedIds.has(c.id)));
+      toast({
+        title: 'Complaints Deleted',
+        description: `${selectedIds.size} complaint(s) have been deleted.`,
+      });
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error('Error deleting complaints:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete complaints. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteOne = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('complaints')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setComplaints(complaints.filter(c => c.id !== id));
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      toast({
+        title: 'Complaint Deleted',
+        description: 'The complaint has been deleted.',
+      });
+    } catch (error) {
+      console.error('Error deleting complaint:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete complaint. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const filteredComplaints = complaints.filter(c => {
     const matchesSeverity = severityFilter === 'All' || c.severity === severityFilter;
     const query = searchQuery.toLowerCase();
@@ -162,6 +254,34 @@ export default function ManageComplaints() {
               <Button variant="outline" size="icon" onClick={handleExportPDF} title="Export to PDF">
                 <FileText className="h-4 w-4" />
               </Button>
+              {selectedIds.size > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" disabled={isDeleting}>
+                      {isDeleting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-2 h-4 w-4" />
+                      )}
+                      Delete ({selectedIds.size})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedIds.size} complaint(s)?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the selected complaints. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive hover:bg-destructive/90">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           </div>
         </CardContent>
@@ -183,6 +303,12 @@ export default function ManageComplaints() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-secondary/50">
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedIds.size === filteredComplaints.length && filteredComplaints.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>User</TableHead>
                     <TableHead>Issue Type</TableHead>
@@ -193,39 +319,89 @@ export default function ManageComplaints() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredComplaints.map((complaint, index) => <TableRow key={complaint.id} className="animate-slide-in-left cursor-pointer hover:bg-muted/50" style={{
-                animationDelay: `${index * 50}ms`
-              }} onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
-                      <TableCell className="font-mono text-sm">{complaint.id.slice(0, 8)}...</TableCell>
-                      <TableCell>
+                  {filteredComplaints.map((complaint, index) => (
+                    <TableRow 
+                      key={complaint.id} 
+                      className={`animate-slide-in-left cursor-pointer hover:bg-muted/50 ${selectedIds.has(complaint.id) ? 'bg-muted/30' : ''}`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox 
+                          checked={selectedIds.has(complaint.id)}
+                          onCheckedChange={() => toggleSelect(complaint.id)}
+                        />
+                      </TableCell>
+                      <TableCell 
+                        className="font-mono text-sm"
+                        onClick={() => navigate(`/admin/complaint/${complaint.id}`)}
+                      >
+                        {complaint.id.slice(0, 8)}...
+                      </TableCell>
+                      <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         <div>
                           <div className="font-medium">{complaint.user_name}</div>
                           <div className="text-xs text-muted-foreground">{complaint.email}</div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         {complaint.issue_type}
                         {complaint.issue_type === 'Other' && complaint.other_issue && <span className="text-muted-foreground text-sm block">
                             ({complaint.other_issue})
                           </span>}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         <SeverityBadge severity={complaint.severity} />
                       </TableCell>
-                      <TableCell>{formatDate(complaint.created_at)}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>{formatDate(complaint.created_at)}</TableCell>
+                      <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         <StatusBadge status={complaint.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={e => {
-                    e.stopPropagation();
-                    navigate(`/admin/complaint/${complaint.id}`);
-                  }}>
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/complaint/${complaint.id}`);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="destructive" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this complaint?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete this complaint. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleDeleteOne(complaint.id)} 
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
-                    </TableRow>)}
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>

@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Pencil, Trash2, ArrowLeft, Clock, User, Mail, Calendar, MessageSquare, AlertTriangle, Loader2 } from 'lucide-react';
+import { ImageGallery } from '@/components/complaints/ImageGallery';
 
 interface ComplaintData {
   id: string;
@@ -39,6 +40,7 @@ interface ComplaintData {
   status_history: StatusHistoryEntry[];
   admin_comment: string | null;
   created_at: string;
+  images: string[];
 }
 
 export default function ComplaintDetails() {
@@ -88,6 +90,7 @@ export default function ComplaintDetails() {
             status_history: (Array.isArray(data.status_history) ? data.status_history : []) as unknown as StatusHistoryEntry[],
             admin_comment: data.admin_comment,
             created_at: data.created_at,
+            images: (data as any).images || [],
           };
           setComplaint(complaintData);
           setEditData({
@@ -345,6 +348,12 @@ export default function ComplaintDetails() {
                     <p className="text-sm text-muted-foreground mb-2">Description</p>
                     <p className="text-foreground">{complaint.description}</p>
                   </div>
+
+                  {complaint.images && complaint.images.length > 0 && (
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <ImageGallery images={complaint.images} />
+                    </div>
+                  )}
 
                   {complaint.admin_comment && (
                     <div className="p-4 rounded-lg border border-primary/20 bg-primary/5">
