@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, X, Image, Camera } from 'lucide-react';
+import { CameraCapture } from './CameraCapture';
 
 interface ImageUploadProps {
   images: File[];
@@ -15,8 +16,8 @@ export function ImageUpload({
   disabled = false 
 }: ImageUploadProps) {
   const [previews, setPreviews] = useState<string[]>([]);
+  const [showCamera, setShowCamera] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Generate previews when images change
   useEffect(() => {
@@ -63,8 +64,11 @@ export function ImageUpload({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = '';
+  };
+
+  const handleCameraCapture = (file: File) => {
+    if (images.length < maxImages) {
+      onImagesChange([...images, file]);
     }
   };
 
@@ -112,10 +116,10 @@ export function ImageUpload({
               <span className="text-xs">Gallery</span>
             </button>
             
-            {/* Camera capture button - visible on all devices, uses camera on mobile */}
+            {/* Camera capture button - opens live camera */}
             <button
               type="button"
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={() => setShowCamera(true)}
               className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
             >
               <Camera className="h-6 w-6" />
@@ -136,20 +140,16 @@ export function ImageUpload({
         disabled={disabled}
       />
 
-      {/* Hidden file input for camera capture */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileSelect}
-        className="hidden"
-        disabled={disabled}
+      {/* Camera capture modal */}
+      <CameraCapture
+        open={showCamera}
+        onClose={() => setShowCamera(false)}
+        onCapture={handleCameraCapture}
       />
 
       <p className="text-xs text-muted-foreground">
         <Image className="inline h-3 w-3 mr-1" />
-        {images.length}/{maxImages} images • Max 5MB each • Use Gallery or Camera
+        {images.length}/{maxImages} images • Max 5MB each
       </p>
     </div>
   );
