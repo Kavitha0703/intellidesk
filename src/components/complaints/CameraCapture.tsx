@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, X, RotateCcw, Check } from 'lucide-react';
+import { Camera, RotateCcw, Check, SwitchCamera } from 'lucide-react';
 
 interface CameraCaptureProps {
   open: boolean;
@@ -16,36 +16,7 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
-
-  const startCamera = useCallback(async () => {
-    try {
-      setError(null);
-      
-      // Stop any existing stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-
-      streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-    } catch (err) {
-      console.error('Camera error:', err);
-      setError('Unable to access camera. Please ensure camera permissions are granted.');
-    }
-  }, [facingMode]);
+  const [isStarting, setIsStarting] = useState(false);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -57,19 +28,55 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
     }
   }, []);
 
+  const startCamera = useCallback(async (mode: 'user' | 'environment') => {
+    if (isStarting) return;
+    
+    try {
+      setIsStarting(true);
+      setError(null);
+      
+      // Stop any existing stream first
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: mode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Wait for video to be ready before playing
+        await new Promise<void>((resolve) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => resolve();
+          }
+        });
+        await videoRef.current.play();
+      }
+    } catch (err) {
+      console.error('Camera error:', err);
+      setError('Unable to access camera. Please ensure camera permissions are granted.');
+    } finally {
+      setIsStarting(false);
+    }
+  }, [isStarting, stopCamera]);
+
   useEffect(() => {
     if (open && !capturedImage) {
-      startCamera();
+      startCamera(facingMode);
     }
     
-    return () => {
-      if (!open) {
-        stopCamera();
-        setCapturedImage(null);
-      }
-    };
-  }, [open, capturedImage, startCamera, stopCamera]);
-
+    if (!open) {
+      stopCamera();
+      setCapturedImage(null);
+    }
+  }, [open]);
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -90,7 +97,7 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
 
   const handleRetake = () => {
     setCapturedImage(null);
-    startCamera();
+    startCamera(facingMode);
   };
 
   const handleConfirm = () => {
@@ -112,35 +119,28 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
     onClose();
   };
 
-  const toggleFacingMode = () => {
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+  const toggleFacingMode = async () => {
+    if (isStarting) return;
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newMode);
     if (!capturedImage) {
-      startCamera();
+      await startCamera(newMode);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="max-w-lg p-0 overflow-hidden bg-black">
+      <DialogContent className="max-w-lg p-0 overflow-hidden bg-black [&>button]:hidden">
         <div className="relative">
-          {/* Close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            className="absolute top-2 right-2 z-20 text-white hover:bg-white/20"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-
           {/* Camera switch button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleFacingMode}
+            disabled={isStarting || !!capturedImage}
             className="absolute top-2 left-2 z-20 text-white hover:bg-white/20"
           >
-            <RotateCcw className="h-5 w-5" />
+            <SwitchCamera className="h-5 w-5" />
           </Button>
 
           {/* Video/Image display */}
@@ -152,7 +152,7 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={startCamera}
+                  onClick={() => startCamera(facingMode)}
                 >
                   Try Again
                 </Button>
