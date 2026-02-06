@@ -21,10 +21,10 @@
        );
      }
  
-     // Create a Supabase client with the user's token to verify they're an admin
-     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-     const supabaseAnonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
-     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      // Create a Supabase client with the user's token to verify they're an admin
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
  
      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
        global: { headers: { Authorization: authHeader } },
