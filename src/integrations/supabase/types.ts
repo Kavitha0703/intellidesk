@@ -21,6 +21,7 @@ export type Database = {
           description: string
           email: string
           id: string
+          images: string[] | null
           issue_type: Database["public"]["Enums"]["issue_type"]
           other_issue: string | null
           severity: Database["public"]["Enums"]["complaint_severity"]
@@ -36,6 +37,7 @@ export type Database = {
           description: string
           email: string
           id?: string
+          images?: string[] | null
           issue_type: Database["public"]["Enums"]["issue_type"]
           other_issue?: string | null
           severity: Database["public"]["Enums"]["complaint_severity"]
@@ -51,6 +53,7 @@ export type Database = {
           description?: string
           email?: string
           id?: string
+          images?: string[] | null
           issue_type?: Database["public"]["Enums"]["issue_type"]
           other_issue?: string | null
           severity?: Database["public"]["Enums"]["complaint_severity"]
