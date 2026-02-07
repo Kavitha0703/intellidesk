@@ -90,8 +90,8 @@ export default function RegisterComplaint() {
     setIsSubmitting(true);
 
     try {
-      // Upload images first
-      const imageUrls: string[] = [];
+      // Upload images first - store file paths (not public URLs) since bucket is private
+      const imagePaths: string[] = [];
       for (const image of images) {
         const fileExt = image.name.split('.').pop();
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -105,13 +105,8 @@ export default function RegisterComplaint() {
           continue;
         }
         
-        const { data: urlData } = supabase.storage
-          .from('complaint-images')
-          .getPublicUrl(fileName);
-        
-        if (urlData?.publicUrl) {
-          imageUrls.push(urlData.publicUrl);
-        }
+        // Store just the file path - signed URLs will be generated when viewing
+        imagePaths.push(fileName);
       }
 
       const statusHistory = [{
@@ -132,7 +127,7 @@ export default function RegisterComplaint() {
           description: formData.description.trim(),
           status: 'Pending',
           status_history: statusHistory,
-          images: imageUrls,
+          images: imagePaths,
         })
         .select()
         .single();
