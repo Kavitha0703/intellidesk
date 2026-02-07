@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +30,7 @@ export default function Notices() {
 
         setNotices(data || []);
       } catch (error) {
-        console.error('Error fetching notices:', error);
+        logError('Error fetching notices:', error);
       } finally {
         setLoading(false);
       }

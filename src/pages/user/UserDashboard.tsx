@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DashboardCard } from '@/components/shared/DashboardCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +47,7 @@ export default function UserDashboard() {
           noticesCount: noticesCount || 0,
         });
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
+        logError('Error fetching dashboard stats:', error);
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 
 /**
  * Hook to fetch signed URLs for images stored in a private Supabase storage bucket.
@@ -48,14 +49,14 @@ export function useSignedImageUrls(
             .createSignedUrl(filePath, expiresIn);
 
           if (error) {
-            console.error('Error creating signed URL:', error);
+            logError('Error creating signed URL:', error);
             // Fallback to original path/URL if signing fails
             urls.push(imagePath);
           } else if (data?.signedUrl) {
             urls.push(data.signedUrl);
           }
         } catch (err) {
-          console.error('Error processing image path:', err);
+          logError('Error processing image path:', err);
           // Fallback to original
           urls.push(imagePath);
         }

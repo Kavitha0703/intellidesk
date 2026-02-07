@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -88,7 +89,7 @@ export default function AdminComplaintDetails() {
           setAdminComment(complaintData.admin_comment || '');
         }
       } catch (error) {
-        console.error('Error fetching complaint:', error);
+        logError('Error fetching complaint:', error);
       } finally {
         setLoading(false);
       }
@@ -164,7 +165,7 @@ export default function AdminComplaintDetails() {
         description: `Complaint status changed to ${newStatus}.`,
       });
     } catch (error) {
-      console.error('Error updating status:', error);
+      logError('Error updating status:', error);
       toast({
         title: 'Error',
         description: 'Failed to update status. Please try again.',
@@ -191,7 +192,7 @@ export default function AdminComplaintDetails() {
         description: 'Resolution note has been saved and is now visible to the user.',
       });
     } catch (error) {
-      console.error('Error saving comment:', error);
+      logError('Error saving comment:', error);
       toast({
         title: 'Error',
         description: 'Failed to save comment. Please try again.',
@@ -217,7 +218,7 @@ export default function AdminComplaintDetails() {
       });
       navigate('/admin/manage-complaints');
     } catch (error) {
-      console.error('Error deleting complaint:', error);
+      logError('Error deleting complaint:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete complaint. Please try again.',

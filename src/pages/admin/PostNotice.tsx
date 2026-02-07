@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,7 @@ export default function PostNotice() {
 
       navigate('/admin');
     } catch (error) {
-      console.error('Error posting notice:', error);
+      logError('Error posting notice:', error);
       toast({
         title: 'Error',
         description: 'Failed to post notice. Please try again.',
