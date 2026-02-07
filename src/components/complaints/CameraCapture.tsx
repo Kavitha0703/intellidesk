@@ -76,7 +76,7 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
       stopCamera();
       setCapturedImage(null);
     }
-  }, [open]);
+  }, [open, facingMode, capturedImage, startCamera, stopCamera]);
   const handleCapture = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -119,13 +119,9 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
     onClose();
   };
 
-  const toggleFacingMode = async () => {
-    if (isStarting) return;
-    const newMode = facingMode === 'user' ? 'environment' : 'user';
-    setFacingMode(newMode);
-    if (!capturedImage) {
-      await startCamera(newMode);
-    }
+  const toggleFacingMode = () => {
+    if (isStarting || capturedImage) return;
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   };
 
   return (
