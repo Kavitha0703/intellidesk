@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Camera, RotateCcw, Check, SwitchCamera } from 'lucide-react';
+import { logError } from '@/lib/logger';
 
 interface CameraCaptureProps {
   open: boolean;
@@ -70,7 +71,7 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
         await videoRef.current.play();
       }
     } catch (err) {
-      console.error('Camera error:', err);
+      logError('Camera error:', err);
       setError('Unable to access camera. Please ensure camera permissions are granted.');
     } finally {
       setIsStarting(false);

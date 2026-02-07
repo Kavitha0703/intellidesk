@@ -1,13 +1,14 @@
- import { useState } from 'react';
- import { supabase } from '@/integrations/supabase/client';
- import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
- import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
- import { Label } from '@/components/ui/label';
- import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
- import { useToast } from '@/hooks/use-toast';
- import { AppRole } from '@/context/AuthContext';
- import { Loader2, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { AppRole } from '@/context/AuthContext';
+import { Loader2, UserPlus } from 'lucide-react';
  
  interface AddUserModalProps {
    open: boolean;
@@ -86,8 +87,8 @@
        setErrors({});
        onOpenChange(false);
        onUserCreated?.();
-     } catch (error) {
-       console.error('Error creating user:', error);
+    } catch (error) {
+      logError('Error creating user:', error);
        toast({
          title: 'Error',
          description: error instanceof Error ? error.message : 'Failed to create user',

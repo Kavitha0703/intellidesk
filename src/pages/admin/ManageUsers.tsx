@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, AppRole } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -79,7 +80,7 @@ export default function ManageUsers() {
 
       setUsers(usersWithRoles);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logError('Error fetching users:', error);
       toast({
         title: 'Error',
         description: 'Failed to load users. Please try again.',

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +38,7 @@ export default function ViewFeedback() {
           created_at: f.created_at,
         })) || []);
       } catch (error) {
-        console.error('Error fetching feedback:', error);
+        logError('Error fetching feedback:', error);
       } finally {
         setLoading(false);
       }

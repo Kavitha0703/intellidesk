@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -46,7 +47,7 @@ export default function ViewComplaints() {
           created_at: c.created_at,
         })) || []);
       } catch (error) {
-        console.error('Error fetching complaints:', error);
+        logError('Error fetching complaints:', error);
       } finally {
         setLoading(false);
       }

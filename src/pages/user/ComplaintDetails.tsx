@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -102,7 +103,7 @@ export default function ComplaintDetails() {
           });
         }
       } catch (error) {
-        console.error('Error fetching complaint:', error);
+        logError('Error fetching complaint:', error);
       } finally {
         setLoading(false);
       }
@@ -170,7 +171,7 @@ export default function ComplaintDetails() {
         description: 'Your complaint has been updated successfully.',
       });
     } catch (error) {
-      console.error('Error updating complaint:', error);
+      logError('Error updating complaint:', error);
       toast({
         title: 'Error',
         description: 'Failed to update complaint. Please try again.',
@@ -196,7 +197,7 @@ export default function ComplaintDetails() {
       });
       navigate('/user/view-complaints');
     } catch (error) {
-      console.error('Error deleting complaint:', error);
+      logError('Error deleting complaint:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete complaint. Please try again.',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { StatusBadge, SeverityBadge } from '@/components/shared/StatusBadge';
@@ -80,7 +81,7 @@ export default function ManageComplaints() {
           created_at: c.created_at
         })) || []);
       } catch (error) {
-        console.error('Error fetching complaints:', error);
+        logError('Error fetching complaints:', error);
         toast({
           title: 'Error',
           description: 'Failed to load complaints',
@@ -130,7 +131,7 @@ export default function ManageComplaints() {
       });
       setSelectedIds(new Set());
     } catch (error) {
-      console.error('Error deleting complaints:', error);
+      logError('Error deleting complaints:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete complaints. Please try again.',
@@ -161,7 +162,7 @@ export default function ManageComplaints() {
         description: 'The complaint has been deleted.',
       });
     } catch (error) {
-      console.error('Error deleting complaint:', error);
+      logError('Error deleting complaint:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete complaint. Please try again.',

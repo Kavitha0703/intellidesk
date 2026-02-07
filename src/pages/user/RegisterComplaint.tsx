@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/logger';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export default function RegisterComplaint() {
           .upload(fileName, image);
         
         if (uploadError) {
-          console.error('Error uploading image:', uploadError);
+          logError('Error uploading image:', uploadError);
           continue;
         }
         
@@ -141,7 +142,7 @@ export default function RegisterComplaint() {
 
       navigate('/user/view-complaints');
     } catch (error) {
-      console.error('Error submitting complaint:', error);
+      logError('Error submitting complaint:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit complaint. Please try again.',
