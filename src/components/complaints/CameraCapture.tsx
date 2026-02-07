@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Camera, RotateCcw, Check, SwitchCamera } from 'lucide-react';
 
@@ -19,12 +19,22 @@ export function CameraCapture({ open, onClose, onCapture }: CameraCaptureProps) 
   const [isStarting, setIsStarting] = useState(false);
 
   const stopCamera = useCallback(() => {
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {
+        // ignore
+      }
+    }
+
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      videoRef.current.load();
     }
   }, []);
 
