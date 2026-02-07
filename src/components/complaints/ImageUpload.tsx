@@ -51,8 +51,13 @@ export function ImageUpload({
     const remainingSlots = maxImages - images.length;
     const filesToAdd = files.slice(0, remainingSlots);
 
-    // Validate file sizes (max 5MB each)
-    const validFiles = filesToAdd.filter(file => file.size <= 5 * 1024 * 1024);
+    // Validate file sizes (max 5MB each) and MIME types
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    
+    const validFiles = filesToAdd.filter(file => 
+      file.size <= maxFileSize && allowedTypes.includes(file.type)
+    );
 
     if (validFiles.length > 0) {
       onImagesChange([...images, ...validFiles]);
@@ -112,7 +117,7 @@ export function ImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/gif,image/webp"
         multiple
         onChange={handleFileSelect}
         className="hidden"

@@ -5,6 +5,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Simple in-memory rate limiter
+// Stores: { [userId]: { count: number, resetTime: number } }
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max requests per window
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
+
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number; retryAfterMs?: number } {
+  const now = Date.now();
+  const userLimit = rateLimitStore.get(userId);
+  
+  // If no record or window expired, create new window
+  if (!userLimit || now >= userLimit.resetTime) {
+    rateLimitStore.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+  
+  // Check if limit exceeded
+  if (userLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { 
+      allowed: false, 
+      remaining: 0, 
+      retryAfterMs: userLimit.resetTime - now 
+    };
+  }
+  
+  // Increment counter
+  userLimit.count++;
+  rateLimitStore.set(userId, userLimit);
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - userLimit.count };
+}
+
 // Input validation helpers
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -76,6 +108,25 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Only admins can create users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limiting check - applies to authenticated admins
+    const rateLimit = checkRateLimit(callingUser.id);
+    if (!rateLimit.allowed) {
+      const retryAfterSeconds = Math.ceil((rateLimit.retryAfterMs || 60000) / 1000);
+      console.log(`Create user request rejected: Rate limit exceeded for admin ${callingUser.id}`);
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "Retry-After": String(retryAfterSeconds),
+            "X-RateLimit-Remaining": "0"
+          } 
+        }
       );
     }
 
@@ -180,7 +231,14 @@ Deno.serve(async (req) => {
           role: sanitizedRole
         } 
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-RateLimit-Remaining": String(rateLimit.remaining)
+        } 
+      }
     );
   } catch (error) {
     console.error("Unexpected error in create-user function");
