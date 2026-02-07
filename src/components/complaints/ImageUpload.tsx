@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, X, Image, Camera } from 'lucide-react';
-import { CameraCapture } from './CameraCapture';
+import { Plus, X, Image } from 'lucide-react';
 
 interface ImageUploadProps {
   images: File[];
@@ -16,7 +15,6 @@ export function ImageUpload({
   disabled = false 
 }: ImageUploadProps) {
   const [previews, setPreviews] = useState<string[]>([]);
-  const [showCamera, setShowCamera] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generate previews when images change
@@ -66,12 +64,6 @@ export function ImageUpload({
     }
   };
 
-  const handleCameraCapture = (file: File) => {
-    if (images.length < maxImages) {
-      onImagesChange([...images, file]);
-    }
-  };
-
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
     onImagesChange(newImages);
@@ -105,27 +97,14 @@ export function ImageUpload({
         ))}
         
         {canAddMore && !disabled && (
-          <div className="flex gap-2">
-            {/* Gallery upload button */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Plus className="h-6 w-6" />
-              <span className="text-xs">Gallery</span>
-            </button>
-            
-            {/* Camera capture button - opens live camera */}
-            <button
-              type="button"
-              onClick={() => setShowCamera(true)}
-              className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Camera className="h-6 w-6" />
-              <span className="text-xs">Camera</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-xs">Add Image</span>
+          </button>
         )}
       </div>
 
@@ -138,13 +117,6 @@ export function ImageUpload({
         onChange={handleFileSelect}
         className="hidden"
         disabled={disabled}
-      />
-
-      {/* Camera capture modal */}
-      <CameraCapture
-        open={showCamera}
-        onClose={() => setShowCamera(false)}
-        onCapture={handleCameraCapture}
       />
 
       <p className="text-xs text-muted-foreground">
