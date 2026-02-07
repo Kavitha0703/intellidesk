@@ -93,8 +93,25 @@ export default function RegisterComplaint() {
     try {
       // Upload images first - store file paths (not public URLs) since bucket is private
       const imagePaths: string[] = [];
+      const failedUploads: string[] = [];
+      
+      // Validate file types client-side as additional check (server enforces via bucket config)
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const maxFileSize = 5 * 1024 * 1024; // 5MB
+      
       for (const image of images) {
-        const fileExt = image.name.split('.').pop();
+        // Client-side validation (server also enforces these via bucket settings)
+        if (!allowedTypes.includes(image.type)) {
+          failedUploads.push(`${image.name} (invalid type)`);
+          continue;
+        }
+        
+        if (image.size > maxFileSize) {
+          failedUploads.push(`${image.name} (too large)`);
+          continue;
+        }
+        
+        const fileExt = image.name.split('.').pop()?.toLowerCase();
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
@@ -103,11 +120,21 @@ export default function RegisterComplaint() {
         
         if (uploadError) {
           logError('Error uploading image:', uploadError);
+          failedUploads.push(image.name);
           continue;
         }
         
         // Store just the file path - signed URLs will be generated when viewing
         imagePaths.push(fileName);
+      }
+      
+      // Notify user of any failed uploads
+      if (failedUploads.length > 0) {
+        toast({
+          title: 'Some images could not be uploaded',
+          description: `Failed: ${failedUploads.join(', ')}`,
+          variant: 'destructive',
+        });
       }
 
       const statusHistory = [{
