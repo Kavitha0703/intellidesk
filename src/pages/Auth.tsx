@@ -12,7 +12,7 @@ import { Loader2, AlertCircle, CheckCircle, Monitor, ArrowLeft } from 'lucide-re
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+const passwordSchema = z.string().min(8, 'Password must be at least 8 characters');
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 
 export default function Auth() {
@@ -372,7 +372,7 @@ export default function Auth() {
                     <Input
                       id="register-password"
                       type="password"
-                      placeholder="Create a password (min. 6 characters)"
+                      placeholder="Create a password (min. 8 characters)"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
