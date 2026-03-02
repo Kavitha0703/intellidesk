@@ -40,7 +40,7 @@ interface ComplaintData {
   admin_comment: string | null;
   created_at: string;
   images: string[];
-  image_notes: Record<string, string>;
+  image_notes: Record<string, string | { title?: string; description?: string }>;
 }
 
 export default function AdminComplaintDetails() {

@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IssueType, Severity } from '@/lib/types';
 import { formatDate, isValidEmail } from '@/lib/utils';
 import { Send, Loader2 } from 'lucide-react';
-import { ImageUpload } from '@/components/complaints/ImageUpload';
+import { ImageUpload, ImageNote } from '@/components/complaints/ImageUpload';
 
 export default function RegisterComplaint() {
   const { profile, user } = useAuth();
@@ -30,7 +30,7 @@ export default function RegisterComplaint() {
     description: '',
   });
   const [images, setImages] = useState<File[]>([]);
-  const [imageNotes, setImageNotes] = useState<Record<number, string>>({});
+  const [imageNotes, setImageNotes] = useState<Record<number, ImageNote>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -144,14 +144,12 @@ export default function RegisterComplaint() {
         note: 'Complaint submitted'
       }];
 
-      // Build image_notes mapping: {storagePath: note}
-      const imageNotesMap: Record<string, string> = {};
+      // Build image_notes mapping: {storagePath: {title, description}}
+      const imageNotesMap: Record<string, { title?: string; description?: string }> = {};
       imagePaths.forEach((path, idx) => {
-        // Find the original index in the images array for this path
-        // imagePaths may skip failed uploads, so we track by order
         const note = imageNotes[idx];
-        if (note && note.trim()) {
-          imageNotesMap[path] = note.trim();
+        if (note && (note.title || note.description)) {
+          imageNotesMap[path] = { title: note.title, description: note.description };
         }
       });
 
