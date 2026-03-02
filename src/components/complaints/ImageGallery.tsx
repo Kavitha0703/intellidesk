@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Image, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Image, Loader2, StickyNote } from 'lucide-react';
 import { useSignedImageUrls } from '@/hooks/useSignedImageUrls';
+
+interface ImageNoteData {
+  title?: string;
+  description?: string;
+}
 
 interface ImageGalleryProps {
   images: string[];
-  imageNotes?: Record<string, string>;
+  imageNotes?: Record<string, string | ImageNoteData>;
 }
 
 export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
@@ -24,11 +29,19 @@ export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
     );
   }
 
-  const getNoteForIndex = (index: number): string | undefined => {
+  const getNoteForIndex = (index: number): ImageNoteData | undefined => {
     if (!imageNotes) return undefined;
-    // Try matching by original image path
     const path = images[index];
-    return imageNotes[path];
+    const raw = imageNotes[path];
+    if (!raw) return undefined;
+    // Support legacy string format
+    if (typeof raw === 'string') return { description: raw };
+    return raw as ImageNoteData;
+  };
+
+  const hasNoteAtIndex = (index: number): boolean => {
+    const note = getNoteForIndex(index);
+    return !!(note && (note.title || note.description));
   };
 
   const openLightbox = (index: number) => setSelectedIndex(index);
@@ -54,31 +67,29 @@ export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
           <span>Evidence Images ({signedUrls.length})</span>
         </div>
         <div className="flex flex-wrap gap-4">
-          {signedUrls.map((url, index) => {
-            const note = getNoteForIndex(index);
-            return (
-              <div key={index} className="w-20 space-y-1">
-                <button
-                  onClick={() => openLightbox(index)}
-                  className="w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <img
-                    src={url}
-                    alt={`Evidence ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-                {note && (
-                  <p className="text-[10px] text-muted-foreground leading-tight line-clamp-2" title={note}>
-                    📝 {note}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+          {signedUrls.map((url, index) => (
+            <div key={index} className="relative w-20">
+              <button
+                onClick={() => openLightbox(index)}
+                className="w-20 h-20 rounded-lg overflow-hidden border border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <img
+                  src={url}
+                  alt={`Evidence ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+              {hasNoteAtIndex(index) && (
+                <div className="absolute bottom-1 left-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                  <StickyNote className="h-3 w-3" />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* Lightbox with WhatsApp-style caption */}
       <Dialog open={selectedIndex !== null} onOpenChange={() => closeLightbox()}>
         <DialogContent className="max-w-4xl p-0 bg-background/95 backdrop-blur">
           <div className="relative">
@@ -107,13 +118,22 @@ export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
                 <img
                   src={signedUrls[selectedIndex]}
                   alt={`Evidence ${selectedIndex + 1}`}
-                  className="max-w-full max-h-[65vh] object-contain rounded-lg"
+                  className="max-w-full max-h-[60vh] object-contain rounded-lg"
                 />
-                {getNoteForIndex(selectedIndex) && (
-                  <p className="mt-3 text-sm text-muted-foreground text-center max-w-md">
-                    📝 {getNoteForIndex(selectedIndex)}
-                  </p>
-                )}
+                {/* WhatsApp-style caption overlay */}
+                {hasNoteAtIndex(selectedIndex) && (() => {
+                  const note = getNoteForIndex(selectedIndex)!;
+                  return (
+                    <div className="mt-3 w-full max-w-lg rounded-lg bg-muted/80 backdrop-blur-sm px-4 py-3">
+                      {note.title && (
+                        <p className="font-medium text-sm text-foreground">{note.title}</p>
+                      )}
+                      {note.description && (
+                        <p className="text-sm text-muted-foreground mt-0.5">{note.description}</p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
