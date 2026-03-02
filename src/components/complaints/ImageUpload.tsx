@@ -1,23 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, X, Image } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface ImageUploadProps {
   images: File[];
   onImagesChange: (images: File[]) => void;
+  imageNotes: Record<number, string>;
+  onImageNotesChange: (notes: Record<number, string>) => void;
   maxImages?: number;
   disabled?: boolean;
 }
 
 export function ImageUpload({ 
   images, 
-  onImagesChange, 
+  onImagesChange,
+  imageNotes,
+  onImageNotesChange,
   maxImages = 5,
   disabled = false 
 }: ImageUploadProps) {
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Generate previews when images change
   useEffect(() => {
     const generatePreviews = async () => {
       const newPreviews: string[] = [];
@@ -51,9 +55,8 @@ export function ImageUpload({
     const remainingSlots = maxImages - images.length;
     const filesToAdd = files.slice(0, remainingSlots);
 
-    // Validate file sizes (max 5MB each) and MIME types
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const maxFileSize = 5 * 1024 * 1024;
     
     const validFiles = filesToAdd.filter(file => 
       file.size <= maxFileSize && allowedTypes.includes(file.type)
@@ -63,7 +66,6 @@ export function ImageUpload({
       onImagesChange([...images, ...validFiles]);
     }
     
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -71,32 +73,54 @@ export function ImageUpload({
 
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
+    // Reindex notes
+    const newNotes: Record<number, string> = {};
+    Object.entries(imageNotes).forEach(([key, value]) => {
+      const k = Number(key);
+      if (k < index) newNotes[k] = value;
+      else if (k > index) newNotes[k - 1] = value;
+    });
     onImagesChange(newImages);
+    onImageNotesChange(newNotes);
+  };
+
+  const handleNoteChange = (index: number, note: string) => {
+    if (note.length > 200) return;
+    onImageNotesChange({ ...imageNotes, [index]: note });
   };
 
   const canAddMore = images.length < maxImages;
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4">
         {previews.map((preview, index) => (
-          <div
-            key={index}
-            className="relative w-24 h-24 rounded-lg overflow-hidden border border-border group"
-          >
-            <img
-              src={preview}
-              alt={`Preview ${index + 1}`}
-              className="w-full h-full object-cover"
-            />
+          <div key={index} className="w-32 space-y-1.5">
+            <div className="relative w-32 h-24 rounded-lg overflow-hidden border border-border group">
+              <img
+                src={preview}
+                alt={`Preview ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
             {!disabled && (
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="h-3 w-3" />
-              </button>
+              <Input
+                type="text"
+                placeholder="Add note (optional)"
+                value={imageNotes[index] || ''}
+                onChange={(e) => handleNoteChange(index, e.target.value)}
+                className="h-7 text-xs px-2"
+                maxLength={200}
+              />
             )}
           </div>
         ))}
@@ -105,7 +129,7 @@ export function ImageUpload({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+            className="w-32 h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
           >
             <Plus className="h-6 w-6" />
             <span className="text-xs">Add Image</span>
@@ -113,7 +137,6 @@ export function ImageUpload({
         )}
       </div>
 
-      {/* Hidden file input for gallery */}
       <input
         ref={fileInputRef}
         type="file"

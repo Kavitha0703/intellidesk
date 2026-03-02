@@ -21,6 +21,7 @@ export type Database = {
           description: string
           email: string
           id: string
+          image_notes: Json | null
           images: string[] | null
           issue_type: Database["public"]["Enums"]["issue_type"]
           other_issue: string | null
@@ -37,6 +38,7 @@ export type Database = {
           description: string
           email: string
           id?: string
+          image_notes?: Json | null
           images?: string[] | null
           issue_type: Database["public"]["Enums"]["issue_type"]
           other_issue?: string | null
@@ -53,6 +55,7 @@ export type Database = {
           description?: string
           email?: string
           id?: string
+          image_notes?: Json | null
           images?: string[] | null
           issue_type?: Database["public"]["Enums"]["issue_type"]
           other_issue?: string | null

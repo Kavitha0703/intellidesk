@@ -30,6 +30,7 @@ export default function RegisterComplaint() {
     description: '',
   });
   const [images, setImages] = useState<File[]>([]);
+  const [imageNotes, setImageNotes] = useState<Record<number, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -143,6 +144,17 @@ export default function RegisterComplaint() {
         note: 'Complaint submitted'
       }];
 
+      // Build image_notes mapping: {storagePath: note}
+      const imageNotesMap: Record<string, string> = {};
+      imagePaths.forEach((path, idx) => {
+        // Find the original index in the images array for this path
+        // imagePaths may skip failed uploads, so we track by order
+        const note = imageNotes[idx];
+        if (note && note.trim()) {
+          imageNotesMap[path] = note.trim();
+        }
+      });
+
       const { error } = await supabase
         .from('complaints')
         .insert({
@@ -156,7 +168,8 @@ export default function RegisterComplaint() {
           status: 'Pending',
           status_history: statusHistory,
           images: imagePaths,
-        })
+          image_notes: imageNotesMap,
+        } as any)
         .select()
         .single();
 
@@ -302,6 +315,8 @@ export default function RegisterComplaint() {
               <ImageUpload 
                 images={images} 
                 onImagesChange={setImages}
+                imageNotes={imageNotes}
+                onImageNotesChange={setImageNotes}
                 maxImages={5}
                 disabled={isSubmitting}
               />
