@@ -40,6 +40,7 @@ interface ComplaintData {
   admin_comment: string | null;
   created_at: string;
   images: string[];
+  image_notes: Record<string, string>;
 }
 
 export default function AdminComplaintDetails() {
@@ -83,6 +84,7 @@ export default function AdminComplaintDetails() {
             admin_comment: data.admin_comment,
             created_at: data.created_at,
             images: (data as any).images || [],
+            image_notes: (data as any).image_notes || {},
           };
           setComplaint(complaintData);
           setNewStatus(complaintData.status);
@@ -283,7 +285,7 @@ export default function AdminComplaintDetails() {
 
               {complaint.images && complaint.images.length > 0 && (
                 <div className="p-3 rounded-lg bg-secondary/50">
-                  <ImageGallery images={complaint.images} />
+                  <ImageGallery images={complaint.images} imageNotes={complaint.image_notes} />
                 </div>
               )}
 
