@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, X, Pencil, StickyNote, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, StickyNote, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +37,7 @@ export function ImageUpload({
   const [previews, setPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [noteModalIndex, setNoteModalIndex] = useState<number | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
@@ -140,14 +141,20 @@ export function ImageUpload({
       <div className="flex flex-wrap gap-4">
         {previews.map((preview, index) => (
           <div key={index} className="relative w-32 h-24 rounded-lg overflow-hidden border border-border group">
-            <img
-              src={preview}
-              alt={`Preview ${index + 1}`}
-              className="w-full h-full object-cover"
-            />
+            <button
+              type="button"
+              onClick={() => setLightboxIndex(index)}
+              className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary rounded-lg"
+            >
+              <img
+                src={preview}
+                alt={`Preview ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </button>
             {/* Note indicator badge */}
             {hasNote(index) && (
-              <div className="absolute bottom-1 left-1 bg-primary text-primary-foreground rounded-full p-0.5">
+              <div className="absolute bottom-1 left-1 bg-primary text-primary-foreground rounded-full p-0.5 pointer-events-none">
                 <StickyNote className="h-3 w-3" />
               </div>
             )}
@@ -250,6 +257,75 @@ export function ImageUpload({
               </Button>
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Lightbox with WhatsApp-style caption */}
+      <Dialog open={lightboxIndex !== null} onOpenChange={(open) => { if (!open) setLightboxIndex(null); }}>
+        <DialogContent className="max-w-4xl p-0 bg-background/95 backdrop-blur">
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLightboxIndex(null)}
+              className="absolute top-2 right-2 z-10"
+              type="button"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+
+            {previews.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setLightboxIndex(lightboxIndex === 0 ? previews.length - 1 : (lightboxIndex ?? 0) - 1)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+                  type="button"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setLightboxIndex(lightboxIndex === previews.length - 1 ? 0 : (lightboxIndex ?? 0) + 1)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+                  type="button"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </>
+            )}
+
+            {lightboxIndex !== null && (
+              <div className="flex flex-col items-center p-4 min-h-[400px]">
+                <img
+                  src={previews[lightboxIndex]}
+                  alt={`Preview ${lightboxIndex + 1}`}
+                  className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                />
+                {hasNote(lightboxIndex) && (() => {
+                  const note = imageNotes[lightboxIndex];
+                  return (
+                    <div className="mt-3 w-full max-w-lg rounded-lg bg-muted/80 backdrop-blur-sm px-4 py-3">
+                      {note?.title && (
+                        <p className="font-medium text-sm text-foreground">{note.title}</p>
+                      )}
+                      {note?.description && (
+                        <p className="text-sm text-muted-foreground mt-0.5">{note.description}</p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {previews.length > 1 && lightboxIndex !== null && (
+              <div className="text-center pb-4 text-sm text-muted-foreground">
+                {lightboxIndex + 1} / {previews.length}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
