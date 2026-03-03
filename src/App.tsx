@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 // Pages
 import Index from "./pages/Index";
@@ -93,20 +95,47 @@ function AppRoutes() {
   );
 }
 
+function AppShell() {
+  useEffect(() => {
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error("Unhandled promise rejection:", event.reason);
+      event.preventDefault();
+    };
+
+    const onGlobalError = (event: ErrorEvent) => {
+      console.error("Global runtime error:", event.error || event.message);
+    };
+
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+    window.addEventListener("error", onGlobalError);
+
+    return () => {
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+      window.removeEventListener("error", onGlobalError);
+    };
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <AppProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </AppProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <AppProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </AppProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <AppShell />
+  </ErrorBoundary>
 );
 
 export default App;
