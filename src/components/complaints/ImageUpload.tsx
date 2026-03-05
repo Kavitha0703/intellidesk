@@ -264,15 +264,6 @@ export function ImageUpload({
       <Dialog open={lightboxIndex !== null} onOpenChange={(open) => { if (!open) setLightboxIndex(null); }}>
         <DialogContent className="max-w-4xl p-0 bg-background/95 backdrop-blur">
           <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLightboxIndex(null)}
-              className="absolute top-2 right-2 z-10"
-              type="button"
-            >
-              <X className="h-5 w-5" />
-            </Button>
 
             {previews.length > 1 && (
               <>
