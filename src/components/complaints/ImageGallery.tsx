@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Image, Loader2, StickyNote } from 'lucide-react';
 import { useSignedImageUrls } from '@/hooks/useSignedImageUrls';
-import { ImageViewerLightbox } from './ImageViewerLightbox';
+import { ImageViewerLightbox, ComplaintMetadata } from './ImageViewerLightbox';
 
 interface ImageNoteData {
   title?: string;
@@ -11,9 +11,10 @@ interface ImageNoteData {
 interface ImageGalleryProps {
   images: string[];
   imageNotes?: Record<string, string | ImageNoteData>;
+  complaintMeta?: ComplaintMetadata;
 }
 
-export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
+export function ImageGallery({ images, imageNotes, complaintMeta }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { signedUrls, loading } = useSignedImageUrls(images);
 
@@ -94,6 +95,7 @@ export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
         onClose={closeLightbox}
         onIndexChange={setSelectedIndex}
         getNote={getNoteForIndex}
+        complaintMeta={complaintMeta}
       />
     </>
   );

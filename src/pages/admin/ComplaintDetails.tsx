@@ -285,7 +285,19 @@ export default function AdminComplaintDetails() {
 
               {complaint.images && complaint.images.length > 0 && (
                 <div className="p-3 rounded-lg bg-secondary/50">
-                  <ImageGallery images={complaint.images} imageNotes={complaint.image_notes} />
+                  <ImageGallery
+                    images={complaint.images}
+                    imageNotes={complaint.image_notes}
+                    complaintMeta={{
+                      id: complaint.id,
+                      user_name: complaint.user_name,
+                      email: complaint.email,
+                      issue_type: complaint.issue_type,
+                      severity: complaint.severity,
+                      description: complaint.description,
+                      created_at: complaint.created_at,
+                    }}
+                  />
                 </div>
               )}
 
