@@ -93,15 +93,8 @@ export function ImageGallery({ images, imageNotes }: ImageGalleryProps) {
       <Dialog open={selectedIndex !== null} onOpenChange={() => closeLightbox()}>
         <DialogContent className="max-w-4xl p-0 bg-background/95 backdrop-blur">
           <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={closeLightbox}
-              className="absolute top-2 right-2 z-10"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-            
+
+
             {signedUrls.length > 1 && (
               <>
                 <Button variant="ghost" size="icon" onClick={goToPrevious} className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
