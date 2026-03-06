@@ -356,20 +356,25 @@ export function ImageViewerLightbox({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover">
-                <DropdownMenuItem onClick={downloadOriginal} className="gap-2">
+                <DropdownMenuItem onClick={() => downloadCompressed(0.92, '1080p', 1920)} className="gap-2">
                   <ImageIcon className="h-4 w-4" />
-                  Original Image
-                  <span className="ml-auto text-xs text-muted-foreground">Full res</span>
+                  1080p
+                  <span className="ml-auto text-xs text-muted-foreground">1920px</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => downloadCompressed(0.7, 'medium', 1920)} className="gap-2">
+                <DropdownMenuItem onClick={() => downloadCompressed(0.85, '720p', 1280)} className="gap-2">
                   <ImageIcon className="h-4 w-4" />
-                  Medium Quality
-                  <span className="ml-auto text-xs text-muted-foreground">70%</span>
+                  720p
+                  <span className="ml-auto text-xs text-muted-foreground">1280px</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => downloadCompressed(0.4, 'small', 800)} className="gap-2">
+                <DropdownMenuItem onClick={() => downloadCompressed(0.75, '480p', 854)} className="gap-2">
                   <ImageIcon className="h-4 w-4" />
-                  Small Size
-                  <span className="ml-auto text-xs text-muted-foreground">40%</span>
+                  480p
+                  <span className="ml-auto text-xs text-muted-foreground">854px</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadCompressed(0.6, '360p', 640)} className="gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  360p
+                  <span className="ml-auto text-xs text-muted-foreground">640px</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={downloadAsPDF} className="gap-2">
