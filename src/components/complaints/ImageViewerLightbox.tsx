@@ -356,6 +356,11 @@ export function ImageViewerLightbox({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-popover">
+                <DropdownMenuItem onClick={() => downloadCompressed(0.95, '1440p', 2560)} className="gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  1440p
+                  <span className="ml-auto text-xs text-muted-foreground">2560px</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => downloadCompressed(0.92, '1080p', 1920)} className="gap-2">
                   <ImageIcon className="h-4 w-4" />
                   1080p
