@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/lib/utils';
 import { Search, Users, Loader2, Inbox, Shield, User, Plus } from 'lucide-react';
 import { AddUserModal } from '@/components/admin/AddUserModal';
@@ -35,10 +36,28 @@ function RoleBadge({ role }: { role: AppRole }) {
   );
 }
 
+function UserCard({ user }: { user: UserWithRole }) {
+  return (
+    <Card className="border-0 shadow-card animate-slide-up">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <p className="font-medium">{user.name}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
+          <RoleBadge role={user.role} />
+        </div>
+        <p className="text-xs text-muted-foreground">Registered: {formatDate(user.created_at)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ManageUsers() {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,23 +69,12 @@ export default function ManageUsers() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      
-      // Fetch profiles with roles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      const { data: profiles, error: profilesError } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
       if (profilesError) throw profilesError;
 
-      // Fetch all user roles
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-
+      const { data: roles, error: rolesError } = await supabase.from('user_roles').select('*');
       if (rolesError) throw rolesError;
 
-      // Combine profiles with roles
       const usersWithRoles: UserWithRole[] = (profiles || []).map((profile) => {
         const userRole = roles?.find((r) => r.user_id === profile.id);
         return {
@@ -81,30 +89,21 @@ export default function ManageUsers() {
       setUsers(usersWithRoles);
     } catch (error) {
       logError('Error fetching users:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load users. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to load users.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate('/admin');
-      return;
-    }
+    if (!isAdmin) { navigate('/admin'); return; }
     fetchUsers();
   }, [isAdmin, navigate]);
 
   const filteredUsers = users.filter((user) => {
     const matchesRole = roleFilter === 'All' || user.role === roleFilter;
     const query = searchQuery.toLowerCase();
-    const matchesSearch =
-      user.name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query);
+    const matchesSearch = user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query);
     return matchesRole && matchesSearch;
   });
 
@@ -128,11 +127,7 @@ export default function ManageUsers() {
 
   return (
     <DashboardLayout>
-      <PageHeader
-        title="View Users"
-        description="View all registered users in the system."
-        backHref="/admin"
-      />
+      <PageHeader title="View Users" description="View all registered users in the system." backHref="/admin" />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -149,40 +144,28 @@ export default function ManageUsers() {
         </Card>
         <Card className="border-0 shadow-card">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
-              <Shield className="h-6 w-6 text-blue-600" />
+            <div className="p-3 rounded-full bg-primary/10">
+              <Shield className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
               <p className="text-2xl font-bold">{adminCount}</p>
               <p className="text-sm text-muted-foreground">Admins</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8"
-              onClick={() => handleAddUser('admin')}
-              title="Add Admin"
-            >
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleAddUser('admin')} title="Add Admin">
               <Plus className="h-4 w-4" />
             </Button>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-card">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-              <User className="h-6 w-6 text-green-600" />
+            <div className="p-3 rounded-full bg-primary/10">
+              <User className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
               <p className="text-2xl font-bold">{userCount}</p>
               <p className="text-sm text-muted-foreground">Regular Users</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="h-8 w-8"
-              onClick={() => handleAddUser('user')}
-              title="Add User"
-            >
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleAddUser('user')} title="Add User">
               <Plus className="h-4 w-4" />
             </Button>
           </CardContent>
@@ -192,23 +175,15 @@ export default function ManageUsers() {
       {/* Filter & Search */}
       <Card className="border-0 shadow-card mb-6 animate-slide-up">
         <CardContent className="py-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
               <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[300px]"
-              />
+              <Input placeholder="Search by name or email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 sm:w-[300px]" />
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Role:</span>
-              <Select
-                value={roleFilter}
-                onValueChange={(value) => setRoleFilter(value as RoleFilter)}
-              >
-                <SelectTrigger className="w-[150px]">
+              <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as RoleFilter)}>
+                <SelectTrigger className="w-[120px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover">
@@ -218,8 +193,8 @@ export default function ManageUsers() {
                 </SelectContent>
               </Select>
             </div>
-            <span className="text-sm text-muted-foreground md:ml-auto">
-              Showing {filteredUsers.length} of {users.length} users
+            <span className="text-sm text-muted-foreground sm:ml-auto">
+              {filteredUsers.length} of {users.length}
             </span>
           </div>
         </CardContent>
@@ -233,12 +208,16 @@ export default function ManageUsers() {
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">No Users Found</h3>
             <p className="text-muted-foreground text-center">
-              {searchQuery || roleFilter !== 'All'
-                ? 'No users match your search criteria.'
-                : 'There are no registered users in the system.'}
+              {searchQuery || roleFilter !== 'All' ? 'No users match your search criteria.' : 'There are no registered users.'}
             </p>
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        <div className="grid gap-4">
+          {filteredUsers.map((user) => (
+            <UserCard key={user.id} user={user} />
+          ))}
+        </div>
       ) : (
         <Card className="border-0 shadow-card animate-slide-up overflow-hidden">
           <CardContent className="p-0">
@@ -254,16 +233,10 @@ export default function ManageUsers() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user, index) => (
-                    <TableRow
-                      key={user.id}
-                      className="animate-slide-in-left"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
+                    <TableRow key={user.id} className="animate-slide-in-left" style={{ animationDelay: `${index * 50}ms` }}>
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <RoleBadge role={user.role} />
-                      </TableCell>
+                      <TableCell><RoleBadge role={user.role} /></TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                     </TableRow>
                   ))}
@@ -274,12 +247,7 @@ export default function ManageUsers() {
         </Card>
       )}
 
-      <AddUserModal
-        open={addModalOpen}
-        onOpenChange={setAddModalOpen}
-        defaultRole={defaultRoleForModal}
-        onUserCreated={fetchUsers}
-      />
+      <AddUserModal open={addModalOpen} onOpenChange={setAddModalOpen} defaultRole={defaultRoleForModal} onUserCreated={fetchUsers} />
     </DashboardLayout>
   );
 }

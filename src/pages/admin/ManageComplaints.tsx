@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ComplaintCard } from '@/components/complaints/ComplaintCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +55,7 @@ interface ComplaintData {
 export default function ManageComplaints() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [complaints, setComplaints] = useState<ComplaintData[]>([]);
   const [loading, setLoading] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<Severity | 'All'>('All');
@@ -64,9 +67,7 @@ export default function ManageComplaints() {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const { data, error } = await supabase.from('complaints').select('*').order('created_at', {
-          ascending: false
-        });
+        const { data, error } = await supabase.from('complaints').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         setComplaints(data?.map(c => ({
           id: c.id,
@@ -82,11 +83,7 @@ export default function ManageComplaints() {
         })) || []);
       } catch (error) {
         logError('Error fetching complaints:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load complaints',
-          variant: 'destructive'
-        });
+        toast({ title: 'Error', description: 'Failed to load complaints', variant: 'destructive' });
       } finally {
         setLoading(false);
       }
@@ -104,39 +101,23 @@ export default function ManageComplaints() {
 
   const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
+    if (newSelected.has(id)) newSelected.delete(id);
+    else newSelected.add(id);
     setSelectedIds(newSelected);
   };
 
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from('complaints')
-        .delete()
-        .in('id', Array.from(selectedIds));
-
+      const { error } = await supabase.from('complaints').delete().in('id', Array.from(selectedIds));
       if (error) throw error;
-
       setComplaints(complaints.filter(c => !selectedIds.has(c.id)));
-      toast({
-        title: 'Complaints Deleted',
-        description: `${selectedIds.size} complaint(s) have been deleted.`,
-      });
+      toast({ title: 'Complaints Deleted', description: `${selectedIds.size} complaint(s) deleted.` });
       setSelectedIds(new Set());
     } catch (error) {
       logError('Error deleting complaints:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete complaints. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete complaints.', variant: 'destructive' });
     } finally {
       setIsDeleting(false);
     }
@@ -144,30 +125,14 @@ export default function ManageComplaints() {
 
   const handleDeleteOne = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('complaints')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('complaints').delete().eq('id', id);
       if (error) throw error;
-
       setComplaints(complaints.filter(c => c.id !== id));
-      setSelectedIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-      toast({
-        title: 'Complaint Deleted',
-        description: 'The complaint has been deleted.',
-      });
+      setSelectedIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+      toast({ title: 'Complaint Deleted', description: 'The complaint has been deleted.' });
     } catch (error) {
       logError('Error deleting complaint:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete complaint. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete complaint.', variant: 'destructive' });
     }
   };
 
@@ -178,80 +143,75 @@ export default function ManageComplaints() {
     return matchesSeverity && matchesSearch;
   }).sort((a, b) => {
     switch (sortBy) {
-      case 'date-desc':
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      case 'date-asc':
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      case 'severity-high':
-        return severityOrder[b.severity] - severityOrder[a.severity];
-      case 'severity-low':
-        return severityOrder[a.severity] - severityOrder[b.severity];
-      default:
-        return 0;
+      case 'date-desc': return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case 'date-asc': return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case 'severity-high': return severityOrder[b.severity] - severityOrder[a.severity];
+      case 'severity-low': return severityOrder[a.severity] - severityOrder[b.severity];
+      default: return 0;
     }
   });
+
   const handleExportPDF = () => {
     if (filteredComplaints.length === 0) {
-      toast({
-        title: 'No Data',
-        description: 'No complaints to export.',
-        variant: 'destructive'
-      });
+      toast({ title: 'No Data', description: 'No complaints to export.', variant: 'destructive' });
       return;
     }
     exportComplaintsToPDF(filteredComplaints);
-    toast({
-      title: 'Export Successful',
-      description: `Exported ${filteredComplaints.length} complaints to PDF.`
-    });
+    toast({ title: 'Export Successful', description: `Exported ${filteredComplaints.length} complaints to PDF.` });
   };
+
   const severityLevels: (Severity | 'All')[] = ['All', 'Not Urgent', 'Medium', 'Urgent', 'Critical'];
+
   if (loading) {
-    return <DashboardLayout>
+    return (
+      <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </DashboardLayout>;
+      </DashboardLayout>
+    );
   }
-  return <DashboardLayout>
-      <PageHeader title={`Manage Complaints(${complaints.length})`} description="Review, update status, and manage all IT complaints." backHref="/admin" />
+
+  return (
+    <DashboardLayout>
+      <PageHeader title={`Manage Complaints (${complaints.length})`} description="Review, update status, and manage all IT complaints." backHref="/admin" />
 
       {/* Filter & Search */}
       <Card className="border-0 shadow-card mb-6 animate-slide-up">
         <CardContent className="py-4">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+          <div className="flex flex-col gap-4">
+            {/* Search */}
             <div className="flex items-center gap-4">
               <Search className="h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search by ID, user, email, issue type..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-[300px]" />
+              <Input placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-1 lg:max-w-[300px]" />
             </div>
-            <div className="flex items-center gap-4">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Severity:</span>
-              <Select value={severityFilter} onValueChange={value => setSeverityFilter(value as Severity | 'All')}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  {severityLevels.map(level => <SelectItem key={level} value={level}>
-                      {level}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-4">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Sort:</span>
-              <Select value={sortBy} onValueChange={value => setSortBy(value as SortOption)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="date-desc">Latest First</SelectItem>
-                  <SelectItem value="date-asc">Oldest First</SelectItem>
-                  <SelectItem value="severity-high">Severity: High to Low</SelectItem>
-                  <SelectItem value="severity-low">Severity: Low to High</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Filters row */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={severityFilter} onValueChange={v => setSeverityFilter(v as Severity | 'All')}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    {severityLevels.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <Select value={sortBy} onValueChange={v => setSortBy(v as SortOption)}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="date-desc">Latest First</SelectItem>
+                    <SelectItem value="date-asc">Oldest First</SelectItem>
+                    <SelectItem value="severity-high">Severity: High→Low</SelectItem>
+                    <SelectItem value="severity-low">Severity: Low→High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Button variant="outline" size="icon" onClick={handleExportPDF} title="Export to PDF">
                 <FileText className="h-4 w-4" />
               </Button>
@@ -259,26 +219,18 @@ export default function ManageComplaints() {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" disabled={isDeleting}>
-                      {isDeleting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="mr-2 h-4 w-4" />
-                      )}
+                      {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                       Delete ({selectedIds.size})
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete {selectedIds.size} complaint(s)?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete the selected complaints. This action cannot be undone.
-                      </AlertDialogDescription>
+                      <AlertDialogDescription>This will permanently delete the selected complaints.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive hover:bg-destructive/90">
-                        Delete
-                      </AlertDialogAction>
+                      <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -288,7 +240,8 @@ export default function ManageComplaints() {
         </CardContent>
       </Card>
 
-      {filteredComplaints.length === 0 ? <Card className="border-0 shadow-card animate-slide-up">
+      {filteredComplaints.length === 0 ? (
+        <Card className="border-0 shadow-card animate-slide-up">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="p-4 rounded-full bg-secondary mb-4">
               <ClipboardList className="h-8 w-8 text-muted-foreground" />
@@ -298,17 +251,32 @@ export default function ManageComplaints() {
               {searchQuery || severityFilter !== 'All' ? 'No complaints match your search criteria.' : 'There are no complaints in the system.'}
             </p>
           </CardContent>
-        </Card> : <Card className="border-0 shadow-card animate-slide-up overflow-hidden">
+        </Card>
+      ) : isMobile ? (
+        /* Mobile: Card Layout */
+        <div className="grid gap-4">
+          {filteredComplaints.map((complaint) => (
+            <ComplaintCard
+              key={complaint.id}
+              {...complaint}
+              onView={() => navigate(`/admin/complaint/${complaint.id}`)}
+              onDelete={handleDeleteOne}
+              selectable
+              selected={selectedIds.has(complaint.id)}
+              onToggleSelect={() => toggleSelect(complaint.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        /* Desktop: Table Layout */
+        <Card className="border-0 shadow-card animate-slide-up overflow-hidden">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-secondary/50">
                     <TableHead className="w-[50px]">
-                      <Checkbox 
-                        checked={selectedIds.size === filteredComplaints.length && filteredComplaints.length > 0}
-                        onCheckedChange={toggleSelectAll}
-                      />
+                      <Checkbox checked={selectedIds.size === filteredComplaints.length && filteredComplaints.length > 0} onCheckedChange={toggleSelectAll} />
                     </TableHead>
                     <TableHead>ID</TableHead>
                     <TableHead>User</TableHead>
@@ -321,21 +289,15 @@ export default function ManageComplaints() {
                 </TableHeader>
                 <TableBody>
                   {filteredComplaints.map((complaint, index) => (
-                    <TableRow 
-                      key={complaint.id} 
+                    <TableRow
+                      key={complaint.id}
                       className={`animate-slide-in-left cursor-pointer hover:bg-muted/50 ${selectedIds.has(complaint.id) ? 'bg-muted/30' : ''}`}
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Checkbox 
-                          checked={selectedIds.has(complaint.id)}
-                          onCheckedChange={() => toggleSelect(complaint.id)}
-                        />
+                      <TableCell onClick={e => e.stopPropagation()}>
+                        <Checkbox checked={selectedIds.has(complaint.id)} onCheckedChange={() => toggleSelect(complaint.id)} />
                       </TableCell>
-                      <TableCell 
-                        className="font-mono text-sm"
-                        onClick={() => navigate(`/admin/complaint/${complaint.id}`)}
-                      >
+                      <TableCell className="font-mono text-sm" onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         {complaint.id.slice(0, 8)}...
                       </TableCell>
                       <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
@@ -346,9 +308,7 @@ export default function ManageComplaints() {
                       </TableCell>
                       <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         {complaint.issue_type}
-                        {complaint.issue_type === 'Other' && complaint.other_issue && <span className="text-muted-foreground text-sm block">
-                            ({complaint.other_issue})
-                          </span>}
+                        {complaint.issue_type === 'Other' && complaint.other_issue && <span className="text-muted-foreground text-sm block">({complaint.other_issue})</span>}
                       </TableCell>
                       <TableCell onClick={() => navigate(`/admin/complaint/${complaint.id}`)}>
                         <SeverityBadge severity={complaint.severity} />
@@ -359,43 +319,23 @@ export default function ManageComplaints() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/admin/complaint/${complaint.id}`);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
+                          <Button variant="outline" size="sm" onClick={e => { e.stopPropagation(); navigate(`/admin/complaint/${complaint.id}`); }}>
+                            <Eye className="h-4 w-4 mr-1" /> View
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="destructive" 
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                              <Button variant="destructive" size="icon" className="h-8 w-8" onClick={e => e.stopPropagation()}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Delete this complaint?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete this complaint. This action cannot be undone.
-                                </AlertDialogDescription>
+                                <AlertDialogDescription>This will permanently delete this complaint.</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteOne(complaint.id)} 
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDeleteOne(complaint.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -407,6 +347,8 @@ export default function ManageComplaints() {
               </Table>
             </div>
           </CardContent>
-        </Card>}
-    </DashboardLayout>;
+        </Card>
+      )}
+    </DashboardLayout>
+  );
 }

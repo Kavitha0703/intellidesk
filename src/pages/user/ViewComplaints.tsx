@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ComplaintCard } from '@/components/complaints/ComplaintCard';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Severity, ComplaintStatus } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import { Search, Eye, AlertCircle, Loader2 } from 'lucide-react';
@@ -24,6 +26,7 @@ interface ComplaintData {
 
 export default function ViewComplaints() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [complaints, setComplaints] = useState<ComplaintData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,16 +91,18 @@ export default function ViewComplaints() {
       {complaints.length > 0 && (
         <Card className="border-0 shadow-card mb-6 animate-slide-up">
           <CardContent className="py-4">
-            <div className="flex items-center gap-4">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by ID, issue type, severity, or status..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-md"
-              />
-              <span className="text-sm text-muted-foreground ml-auto">
-                Showing {filteredComplaints.length} of {complaints.length} complaints
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search complaints..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 sm:w-[300px]"
+                />
+              </div>
+              <span className="text-sm text-muted-foreground sm:ml-auto">
+                {filteredComplaints.length} of {complaints.length}
               </span>
             </div>
           </CardContent>
@@ -131,7 +136,19 @@ export default function ViewComplaints() {
             </p>
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        /* Mobile: Card Layout */
+        <div className="grid gap-4">
+          {filteredComplaints.map((complaint) => (
+            <ComplaintCard
+              key={complaint.id}
+              {...complaint}
+              onView={() => navigate(`/user/complaint/${complaint.id}`)}
+            />
+          ))}
+        </div>
       ) : (
+        /* Desktop: Table Layout */
         <Card className="border-0 shadow-card animate-slide-up overflow-hidden">
           <CardContent className="p-0">
             <Table>
