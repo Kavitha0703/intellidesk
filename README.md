@@ -1,73 +1,113 @@
-# Welcome to your Lovable project
+# IntelliDesk – IT Complaint Management System
 
-## Project info
+IntelliDesk is a modern web-based IT Complaint Management System designed to simplify the process of reporting, tracking, and resolving technical issues within an organization. The platform enables users to submit complaints, attach evidence, and monitor the status of their issues through a centralized and user-friendly dashboard.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Live Website
+https://intellidesk.lovable.app
 
-## How can I edit this code?
+## 📌 Overview
 
-There are several ways of editing your application.
+Many organizations face difficulties managing IT-related complaints efficiently. IntelliDesk provides a structured digital platform that allows users to easily submit complaints while enabling administrators to manage and resolve issues effectively.
 
-**Use Lovable**
+The system improves communication between users and IT support teams while maintaining a clear record of all complaints and their resolutions.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## ✨ Key Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### 👤 User Features
+- Secure user registration and login
+- Submit IT complaints with detailed descriptions
+- Upload evidence files or screenshots
+- Capture images directly using device camera
+- Add notes to uploaded evidence
+- Track complaint status in real-time
+- View complaint history
 
-**Use your preferred IDE**
+### 🛠 Admin Features
+- View and manage all submitted complaints
+- Update complaint status and progress
+- Review uploaded evidence and user notes
+- Export complaint data as CSV files
+- Dashboard overview for monitoring complaints
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📱 System Features
+- Fully responsive mobile-friendly design
+- Progressive Web App (PWA) support
+- Secure authentication and authorization
+- Modern and intuitive user interface
+- Image viewer with zoom and drag functionality
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠 Technologies Used
 
-Follow these steps:
+This project was developed using modern web development technologies:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
 - React
-- shadcn-ui
+- TypeScript
+- Vite
 - Tailwind CSS
+- shadcn-ui
+- Supabase (Authentication and Database)
+- Lovable (Application builder and deployment)
 
-## How can I deploy this project?
+## 📂 Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+src/
+components/
+pages/
+hooks/
+lib/
+styles/
 
-## Can I connect a custom domain to my Lovable project?
 
-Yes, you can!
+The structure separates UI components, pages, utilities, and styles to maintain clean and scalable code organization.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## ⚙️ Local Development Setup
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+To run this project locally on your computer:
+
+1. Clone the repository
+
+git clone https://github.com/Kavitha0703/intellidesk.git
+
+2. Navigate to the project folder
+
+cd intellidesk
+
+3. Install dependencies
+
+npm install
+
+4. Start the development server
+
+npm run dev
+
+Then it runs at:
+
+http://localhost:5173
+
+## 🌐 Deployment
+
+The application is deployed using Lovable hosting.
+
+To deploy updates:
+
+1. Open the project in Lovable
+2. Click **Share → Publish**
+3. The latest version will be available online.
+
+## 📈 Future Improvements
+
+Potential enhancements for the system include:
+
+- Email notifications for complaint updates
+- Advanced analytics and reporting
+- Priority-based complaint management
+- Department-based ticket assignment
+- Push notifications for status updates
+
+## 👨‍💻 Author
+
+**Nasika Kavitha**
+
+Developer of **IntelliDesk – IT Complaint Management System**
+
+This project was developed as an academic project to demonstrate a web-based IT complaint management platform.
