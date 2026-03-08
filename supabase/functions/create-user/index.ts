@@ -205,11 +205,12 @@ Deno.serve(async (req) => {
     });
 
     // Create the user with admin API (auto-confirms the user)
+    // SECURITY: Do NOT pass role in user_metadata — role is set explicitly below
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email: sanitizedEmail,
       password,
-      email_confirm: true, // Auto-confirm the email
-      user_metadata: { name: sanitizedName, role: sanitizedRole },
+      email_confirm: true,
+      user_metadata: { name: sanitizedName },
     });
 
     if (createError) {
@@ -220,7 +221,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`User created successfully: ${newUser.user.id}`);
+    // SECURITY: Explicitly set role in user_roles table using service-role client
+    // The trigger assigns 'user' by default; if a different role is requested, update it
+    if (sanitizedRole !== 'user') {
+      const { error: roleError } = await adminClient
+        .from('user_roles')
+        .update({ role: sanitizedRole })
+        .eq('user_id', newUser.user.id);
+
+      if (roleError) {
+        console.log(`Failed to set role for user ${newUser.user.id}: ${roleError.message}`);
+        // User was created but role assignment failed — clean up
+        await adminClient.auth.admin.deleteUser(newUser.user.id);
+        return new Response(
+          JSON.stringify({ error: "Failed to assign role. User was not created." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    console.log(`User created successfully: ${newUser.user.id} with role: ${sanitizedRole}`);
     return new Response(
       JSON.stringify({ 
         success: true, 
