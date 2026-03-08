@@ -37,7 +37,7 @@ const Index = () => {
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               IntelliDesk
-              <span className="block gradient-primary bg-clip-text text-transparent">
+              <span className="block bg-clip-text text-transparent" style={{ backgroundImage: 'var(--gradient-primary)' }}>
                 Smart IT Support Platform
               </span>
             </h1>
