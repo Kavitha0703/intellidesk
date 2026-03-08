@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: {
           emailRedirectTo: redirectUrl,
-          data: { name, role }
+          data: { name }
         }
       });
       
