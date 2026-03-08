@@ -36,9 +36,9 @@ const Index = () => {
               <span className="text-sm font-medium text-primary">IT Support Made Simple</span>
             </div>
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Digital Complaint
+              IntelliDesk
               <span className="block gradient-primary bg-clip-text text-transparent">
-                Management System
+                Smart IT Support Platform
               </span>
             </h1>
             <p className="mb-10 text-lg text-muted-foreground max-w-2xl mx-auto">
