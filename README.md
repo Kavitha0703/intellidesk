@@ -1,4 +1,4 @@
-# IntelliDesk – IT Complaint Management System
+# IT Complaint Management System
 
 IntelliDesk is a modern web-based IT Complaint Management System designed to simplify the process of reporting, tracking, and resolving technical issues within an organization. The platform enables users to submit complaints, attach evidence, and monitor the status of their issues through a centralized and user-friendly dashboard.
 
