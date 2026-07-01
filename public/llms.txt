@@ -8,3 +8,4 @@ IntelliDesk pairs a user portal for submitting IT complaints with an admin porta
 
 - [Home](/): Overview of IntelliDesk and entry points for User and Admin sign-in.
 - [Sign in](/auth): Sign-in and registration for both User and Admin roles.
+- [IT Support Best Practices Guide](/blog/it-support-best-practices): Guide to ITSM best practices, help desk KPIs, and choosing an IT ticketing system.
