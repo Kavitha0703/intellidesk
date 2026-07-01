@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Monitor, User, Shield, CheckCircle, Clock, Bell, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { PageMeta } from '@/components/shared/PageMeta';
+
 
 const Index = () => {
   const navigate = useNavigate();
@@ -26,6 +28,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="IntelliDesk – Smart IT Support Platform"
+        description="Register, track, and resolve IT service requests with IntelliDesk – a smart IT complaint management platform for users and admins."
+        path="/"
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 gradient-hero opacity-5" />
