@@ -13,6 +13,7 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ITSupportBestPractices from "./pages/blog/ITSupportBestPractices";
 
 // User Pages
 import UserDashboard from "./pages/user/UserDashboard";
@@ -70,6 +71,7 @@ function AppRoutes() {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/login" element={<Navigate to="/auth" replace />} />
+      <Route path="/blog/it-support-best-practices" element={<ITSupportBestPractices />} />
       
       {/* User Routes */}
       <Route path="/user" element={<ProtectedRoute allowedRole="user"><UserDashboard /></ProtectedRoute>} />
