@@ -53,7 +53,7 @@ export function Header() {
           {isMobile && (
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -122,7 +122,7 @@ export function Header() {
               <Monitor className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="font-semibold text-foreground">IT Complaint System</h1>
+              <div className="font-semibold text-foreground">IT Complaint System</div>
               <p className="text-xs text-muted-foreground">
                 {isAdmin ? 'Administrator Panel' : 'User Portal'}
               </p>
