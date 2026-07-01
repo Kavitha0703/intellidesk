@@ -1,10 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { logError } from '@/lib/logger';
 
 interface ErrorBoundaryState {
   hasError: boolean;
-  message?: string;
 }
 
 interface ErrorBoundaryProps {
@@ -17,15 +17,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
-    return {
-      hasError: true,
-      message: error instanceof Error ? error.message : 'Unexpected application error',
-    };
+  static getDerivedStateFromError(_error: unknown): ErrorBoundaryState {
+    return { hasError: true };
   }
 
   componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logError('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   private handleReload = () => {
@@ -41,8 +38,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <AlertTriangle className="h-6 w-6" />
             </div>
             <h1 className="text-xl font-semibold">Something went wrong</h1>
-            <p className="text-sm text-muted-foreground break-words">
-              {this.state.message || 'An unexpected error occurred while loading this page.'}
+            <p className="text-sm text-muted-foreground">
+              An unexpected error occurred. Please reload the page.
             </p>
             <Button onClick={this.handleReload} className="w-full" type="button">
               Reload page
@@ -55,3 +52,4 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children;
   }
 }
+
