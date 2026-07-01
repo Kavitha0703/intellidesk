@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { Loader2, AlertCircle, CheckCircle, Monitor, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
+import { PageMeta } from '@/components/shared/PageMeta';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(8, 'Password must be at least 8 characters');
@@ -190,11 +191,17 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center p-4">
+      <PageMeta
+        title={`${roleLabel} Sign in – IntelliDesk`}
+        description={`Sign in or create a ${roleLabel} account on IntelliDesk to manage IT complaints.`}
+        path={urlRole === 'admin' ? '/auth?role=admin' : '/auth?role=user'}
+      />
       <Card className="w-full max-w-md border-0 shadow-xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10">
             <Monitor className="h-8 w-8 text-primary" />
           </div>
+          <h1 className="sr-only">Sign in to IntelliDesk</h1>
           <CardTitle className="text-2xl">IT Complaint System</CardTitle>
           <CardDescription>
             {activeTab === 'login' && `Sign in as ${roleLabel}`}

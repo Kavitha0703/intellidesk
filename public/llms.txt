@@ -1,0 +1,10 @@
+# IntelliDesk
+
+> IntelliDesk is a smart IT complaint management platform that lets users register, track, and resolve IT service requests, and lets administrators triage and respond to them.
+
+IntelliDesk pairs a user portal for submitting IT complaints with an admin portal for triage, notices, and feedback review. It is built as a single-page web app with role-based access — most surfaces require authentication.
+
+## Pages
+
+- [Home](/): Overview of IntelliDesk and entry points for User and Admin sign-in.
+- [Sign in](/auth): Sign-in and registration for both User and Admin roles.

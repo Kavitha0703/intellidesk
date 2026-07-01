@@ -32,6 +32,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           onClick={() => navigate('/user/register-complaint')}
           className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-xl gradient-user"
           size="icon"
+          aria-label="Register new complaint"
         >
           <Plus className="h-6 w-6 text-primary-foreground" />
         </Button>
