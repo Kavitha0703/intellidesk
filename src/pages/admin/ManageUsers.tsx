@@ -36,16 +36,55 @@ function RoleBadge({ role }: { role: AppRole }) {
   );
 }
 
-function UserCard({ user }: { user: UserWithRole }) {
+function RoleSelector({
+  user,
+  currentUserId,
+  onChange,
+  disabled,
+}: {
+  user: UserWithRole;
+  currentUserId?: string;
+  onChange: (userId: string, role: AppRole) => Promise<void>;
+  disabled?: boolean;
+}) {
+  const isSelf = currentUserId === user.id;
+  return (
+    <Select
+      value={user.role}
+      disabled={disabled || isSelf}
+      onValueChange={(value) => onChange(user.id, value as AppRole)}
+    >
+      <SelectTrigger className="w-[110px] h-8" title={isSelf ? "You cannot change your own role" : undefined}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="bg-popover">
+        <SelectItem value="admin">Admin</SelectItem>
+        <SelectItem value="user">User</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function UserCard({
+  user,
+  currentUserId,
+  onRoleChange,
+  updating,
+}: {
+  user: UserWithRole;
+  currentUserId?: string;
+  onRoleChange: (userId: string, role: AppRole) => Promise<void>;
+  updating: boolean;
+}) {
   return (
     <Card className="border-0 shadow-card animate-slide-up">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between mb-2 gap-2">
           <div>
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
-          <RoleBadge role={user.role} />
+          <RoleSelector user={user} currentUserId={currentUserId} onChange={onRoleChange} disabled={updating} />
         </div>
         <p className="text-xs text-muted-foreground">Registered: {formatDate(user.created_at)}</p>
       </CardContent>
@@ -54,7 +93,7 @@ function UserCard({ user }: { user: UserWithRole }) {
 }
 
 export default function ManageUsers() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -65,6 +104,28 @@ export default function ManageUsers() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('All');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [defaultRoleForModal, setDefaultRoleForModal] = useState<AppRole>('user');
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  const handleRoleChange = async (userId: string, newRole: AppRole) => {
+    const target = users.find((u) => u.id === userId);
+    if (!target || target.role === newRole) return;
+    setUpdatingUserId(userId);
+    try {
+      const response = await supabase.functions.invoke('update-user-role', {
+        body: { user_id: userId, role: newRole },
+      });
+      if (response.error) throw new Error(response.error.message || 'Failed to update role');
+      if (response.data?.error) throw new Error(response.data.error);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+      toast({ title: 'Role Updated', description: `${target.name} is now ${newRole === 'admin' ? 'an admin' : 'a user'}.` });
+    } catch (error) {
+      logError('Error updating role:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to update role', variant: 'destructive' });
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
 
   const fetchUsers = async () => {
     try {
@@ -215,7 +276,13 @@ export default function ManageUsers() {
       ) : isMobile ? (
         <div className="grid gap-4">
           {filteredUsers.map((user) => (
-            <UserCard key={user.id} user={user} />
+            <UserCard
+              key={user.id}
+              user={user}
+              currentUserId={currentUser?.id}
+              onRoleChange={handleRoleChange}
+              updating={updatingUserId === user.id}
+            />
           ))}
         </div>
       ) : (
@@ -236,7 +303,14 @@ export default function ManageUsers() {
                     <TableRow key={user.id} className="animate-slide-in-left" style={{ animationDelay: `${index * 50}ms` }}>
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell><RoleBadge role={user.role} /></TableCell>
+                      <TableCell>
+                        <RoleSelector
+                          user={user}
+                          currentUserId={currentUser?.id}
+                          onChange={handleRoleChange}
+                          disabled={updatingUserId === user.id}
+                        />
+                      </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                     </TableRow>
                   ))}
