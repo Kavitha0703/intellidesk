@@ -115,6 +115,28 @@ export default function ManageUsers() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [defaultRoleForModal, setDefaultRoleForModal] = useState<AppRole>('user');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setDeleting(true);
+    try {
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userToDelete.id },
+      });
+      if (response.error) throw new Error(response.error.message || 'Failed to delete user');
+      if (response.data?.error) throw new Error(response.data.error);
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      toast({ title: 'User Deleted', description: `${userToDelete.name} has been permanently deleted.` });
+      setUserToDelete(null);
+    } catch (error) {
+      logError('Error deleting user:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to delete user', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
     const target = users.find((u) => u.id === userId);
