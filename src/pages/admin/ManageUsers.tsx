@@ -14,8 +14,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDate } from '@/lib/utils';
-import { Search, Users, Loader2, Inbox, Shield, User, Plus } from 'lucide-react';
+import { Search, Users, Loader2, Inbox, Shield, User, Plus, Trash2 } from 'lucide-react';
 import { AddUserModal } from '@/components/admin/AddUserModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface UserWithRole {
   id: string;
