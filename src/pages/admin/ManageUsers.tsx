@@ -410,6 +410,3 @@ export default function ManageUsers() {
     </DashboardLayout>
   );
 }
-    </DashboardLayout>
-  );
-}
