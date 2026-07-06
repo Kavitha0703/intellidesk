@@ -276,7 +276,13 @@ export default function ManageUsers() {
       ) : isMobile ? (
         <div className="grid gap-4">
           {filteredUsers.map((user) => (
-            <UserCard key={user.id} user={user} />
+            <UserCard
+              key={user.id}
+              user={user}
+              currentUserId={currentUser?.id}
+              onRoleChange={handleRoleChange}
+              updating={updatingUserId === user.id}
+            />
           ))}
         </div>
       ) : (
@@ -297,7 +303,14 @@ export default function ManageUsers() {
                     <TableRow key={user.id} className="animate-slide-in-left" style={{ animationDelay: `${index * 50}ms` }}>
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell><RoleBadge role={user.role} /></TableCell>
+                      <TableCell>
+                        <RoleSelector
+                          user={user}
+                          currentUserId={currentUser?.id}
+                          onChange={handleRoleChange}
+                          disabled={updatingUserId === user.id}
+                        />
+                      </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                     </TableRow>
                   ))}
