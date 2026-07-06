@@ -79,13 +79,16 @@ function UserCard({
   user,
   currentUserId,
   onRoleChange,
+  onDelete,
   updating,
 }: {
   user: UserWithRole;
   currentUserId?: string;
   onRoleChange: (userId: string, role: AppRole) => Promise<void>;
+  onDelete: (user: UserWithRole) => void;
   updating: boolean;
 }) {
+  const isSelf = currentUserId === user.id;
   return (
     <Card className="border-0 shadow-card animate-slide-up">
       <CardContent className="p-4">
@@ -94,7 +97,19 @@ function UserCard({
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
-          <RoleSelector user={user} currentUserId={currentUserId} onChange={onRoleChange} disabled={updating} />
+          <div className="flex items-center gap-2">
+            <RoleSelector user={user} currentUserId={currentUserId} onChange={onRoleChange} disabled={updating} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+              disabled={isSelf || updating}
+              onClick={() => onDelete(user)}
+              title={isSelf ? 'You cannot delete your own account' : 'Delete user'}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">Registered: {formatDate(user.created_at)}</p>
       </CardContent>
