@@ -328,6 +328,7 @@ export default function ManageUsers() {
               user={user}
               currentUserId={currentUser?.id}
               onRoleChange={handleRoleChange}
+              onDelete={setUserToDelete}
               updating={updatingUserId === user.id}
             />
           ))}
@@ -343,24 +344,40 @@ export default function ManageUsers() {
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Registered</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user, index) => (
-                    <TableRow key={user.id} className="animate-slide-in-left" style={{ animationDelay: `${index * 50}ms` }}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <RoleSelector
-                          user={user}
-                          currentUserId={currentUser?.id}
-                          onChange={handleRoleChange}
-                          disabled={updatingUserId === user.id}
-                        />
-                      </TableCell>
-                      <TableCell>{formatDate(user.created_at)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredUsers.map((user, index) => {
+                    const isSelf = currentUser?.id === user.id;
+                    return (
+                      <TableRow key={user.id} className="animate-slide-in-left" style={{ animationDelay: `${index * 50}ms` }}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <RoleSelector
+                            user={user}
+                            currentUserId={currentUser?.id}
+                            onChange={handleRoleChange}
+                            disabled={updatingUserId === user.id}
+                          />
+                        </TableCell>
+                        <TableCell>{formatDate(user.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            disabled={isSelf || updatingUserId === user.id}
+                            onClick={() => setUserToDelete(user)}
+                            title={isSelf ? 'You cannot delete your own account' : 'Delete user'}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -369,6 +386,30 @@ export default function ManageUsers() {
       )}
 
       <AddUserModal open={addModalOpen} onOpenChange={setAddModalOpen} defaultRole={defaultRoleForModal} onUserCreated={fetchUsers} />
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && !deleting && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure that you want to delete <span className="font-semibold text-foreground">{userToDelete?.name}</span>? This will permanently remove their account and all associated data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>No, cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteUser(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Deleting...</>) : 'Yes, delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </DashboardLayout>
+  );
+}
     </DashboardLayout>
   );
 }
