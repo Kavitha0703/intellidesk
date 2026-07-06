@@ -36,6 +36,35 @@ function RoleBadge({ role }: { role: AppRole }) {
   );
 }
 
+function RoleSelector({
+  user,
+  currentUserId,
+  onChange,
+  disabled,
+}: {
+  user: UserWithRole;
+  currentUserId?: string;
+  onChange: (userId: string, role: AppRole) => Promise<void>;
+  disabled?: boolean;
+}) {
+  const isSelf = currentUserId === user.id;
+  return (
+    <Select
+      value={user.role}
+      disabled={disabled || isSelf}
+      onValueChange={(value) => onChange(user.id, value as AppRole)}
+    >
+      <SelectTrigger className="w-[110px] h-8" title={isSelf ? "You cannot change your own role" : undefined}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="bg-popover">
+        <SelectItem value="admin">Admin</SelectItem>
+        <SelectItem value="user">User</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 function UserCard({ user }: { user: UserWithRole }) {
   return (
     <Card className="border-0 shadow-card animate-slide-up">
