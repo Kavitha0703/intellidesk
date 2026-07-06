@@ -65,16 +65,26 @@ function RoleSelector({
   );
 }
 
-function UserCard({ user }: { user: UserWithRole }) {
+function UserCard({
+  user,
+  currentUserId,
+  onRoleChange,
+  updating,
+}: {
+  user: UserWithRole;
+  currentUserId?: string;
+  onRoleChange: (userId: string, role: AppRole) => Promise<void>;
+  updating: boolean;
+}) {
   return (
     <Card className="border-0 shadow-card animate-slide-up">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between mb-2 gap-2">
           <div>
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
-          <RoleBadge role={user.role} />
+          <RoleSelector user={user} currentUserId={currentUserId} onChange={onRoleChange} disabled={updating} />
         </div>
         <p className="text-xs text-muted-foreground">Registered: {formatDate(user.created_at)}</p>
       </CardContent>
