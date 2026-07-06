@@ -93,7 +93,7 @@ function UserCard({
 }
 
 export default function ManageUsers() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -104,6 +104,28 @@ export default function ManageUsers() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('All');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [defaultRoleForModal, setDefaultRoleForModal] = useState<AppRole>('user');
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  const handleRoleChange = async (userId: string, newRole: AppRole) => {
+    const target = users.find((u) => u.id === userId);
+    if (!target || target.role === newRole) return;
+    setUpdatingUserId(userId);
+    try {
+      const response = await supabase.functions.invoke('update-user-role', {
+        body: { user_id: userId, role: newRole },
+      });
+      if (response.error) throw new Error(response.error.message || 'Failed to update role');
+      if (response.data?.error) throw new Error(response.data.error);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+      toast({ title: 'Role Updated', description: `${target.name} is now ${newRole === 'admin' ? 'an admin' : 'a user'}.` });
+    } catch (error) {
+      logError('Error updating role:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to update role', variant: 'destructive' });
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
 
   const fetchUsers = async () => {
     try {
